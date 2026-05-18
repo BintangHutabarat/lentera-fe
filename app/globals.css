@@ -1,26 +1,91 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
+@theme {
+  /* Brand colors */
+  --color-brand-blue:    #2B9FD8;
+  --color-brand-teal:    #3DD6B5;
+  --color-brand-green:   #5FE0A0;
+  --color-brand-yellow:  #F5C518;
+
+  /* Surface colors */
+  --color-surface-page:  #F0FAFA;
+  --color-surface-card:  #FFFFFF;
+  --color-surface-soft:  #E5F4F8;
+
+  /* Border */
+  --color-border:        #D0E8F0;
+
+  /* Text / ink */
+  --color-ink:           #1C3B4A;
+  --color-ink-muted:     #6B8E9F;
+  --color-ink-secondary: #4A6E7E;
+
+  /* Subject colors */
+  --color-blue-light:    #E3F4FC;
+  --color-blue-dark:     #1a6a9a;
+  --color-teal-light:    #E0FAF6;
+  --color-teal-dark:     #1a9c87;
+  --color-yellow-light:  #FDF7DD;
+  --color-yellow-dark:   #7a5c00;
+  --color-mint-light:    #E0FBF0;
+  --color-mint-dark:     #1a8a75;
+  --color-red-light:     #FEF0EF;
+  --color-red-dark:      #b83232;
+
+  /* Border radius */
+  --radius-card: 16px;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --brand-grad: linear-gradient(135deg, #2B9FD8 0%, #3DD6B5 60%, #7EEFC7 100%);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html, body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background-color: #F0FAFA;
+    color: #1C3B4A;
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    min-height: 100dvh;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  .bg-brand-gradient {
+    background: var(--brand-grad);
+  }
+
+  .card {
+    @apply bg-surface-card border border-border rounded-card;
+  }
+
+  .chip {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold;
+  }
+
+  .progress-fill {
+    @apply h-full rounded-full transition-all duration-500;
+    background: var(--brand-grad);
+  }
+
+  .nav-active {
+    @apply text-brand-blue;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .pb-safe {
+    padding-bottom: max(72px, env(safe-area-inset-bottom));
+  }
 }

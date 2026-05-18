@@ -1,0 +1,25 @@
+{
+  "name": "Lentera LMS",
+  "short_name": "Lentera",
+  "description": "Platform pembelajaran interaktif untuk siswa dan guru SMA",
+  "start_url": "/student/beranda",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F6FBFD",
+  "theme_color": "#2B9FD8",
+  "lang": "id",
+  "categories": ["education"],
+  "icons": [
+    {
+      "src": "/icon",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-icon",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}
