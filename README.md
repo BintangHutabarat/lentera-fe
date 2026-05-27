@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Lentera
 
-## Getting Started
+**Lentera** adalah Learning Management System (LMS) mobile-first untuk siswa SMA di Indonesia. Dibangun sebagai Progressive Web App (PWA) agar bisa diakses dari smartphone tanpa perlu install dari app store, dengan UI dalam Bahasa Indonesia yang ringan dan ramah untuk koneksi terbatas.
 
-First, run the development server:
+Repo ini adalah **frontend**. Backend (NestJS + Prisma + PostgreSQL) ada di repo terpisah — lihat `docs/backend-context.md` untuk spesifikasinya.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Fitur
+
+- **Beranda** — ringkasan XP, statistik (tugas selesai, rata-rata nilai, kehadiran), mata pelajaran aktif, tugas mendekati deadline, jadwal hari ini, dan leaderboard
+- **Pelajaran** — daftar mata pelajaran beserta progres bab
+- **Tugas** — list tugas dengan urgency badge + halaman detail
+- **Quiz** — pengerjaan kuis dengan timer countdown, palette navigasi soal, dan auto-submit saat waktu habis
+- **Forum** — ruang diskusi siswa
+- **Profil** — info siswa, capaian, dan pengaturan akun
+
+Phase 1 fokus ke role **siswa**; role **guru** & **admin** menyusul setelah BE auth siap.
+
+## Stack
+
+- **Next.js 16** (App Router) + **React 19** + **TypeScript**
+- **Tailwind CSS v4** dengan `@theme` di `globals.css`
+- **lucide-react** untuk icon
+- File-based icon convention (`app/icon.tsx`, `app/apple-icon.tsx`) + `manifest.json` untuk PWA
+- Saat ini masih pakai mock data di `lib/mock-data.ts` — akan di-swap ke real API saat BE siap
+
+> ⚠️ Next.js 16 punya breaking changes dari versi sebelumnya. Sebelum nulis kode, baca dulu doc terkait di `node_modules/next/dist/docs/`.
+
+## Struktur folder
+
+```
+app/
+  layout.tsx          # root layout + metadata PWA
+  icon.tsx            # 192x192 app icon (ImageResponse)
+  apple-icon.tsx      # 180x180 apple-touch icon
+  student/
+    beranda/          # dashboard siswa
+    pelajaran/        # daftar mata pelajaran
+    tugas/            # list + detail tugas
+    quiz/             # quiz player
+    forum/            # diskusi
+    profil/           # profil siswa
+components/ui/        # Avatar, XPBar, StatCard, ProgressBar, dll
+lib/
+  mock-data.ts        # data dummy (sementara)
+  utils.ts            # color map, urgency styles
+  icons.ts            # mapping subject → icon
+types/                # tipe data shared
+docs/
+  backend-context.md  # spec BE (NestJS + Prisma + session+Redis)
+public/
+  manifest.json       # PWA manifest
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Menjalankan secara lokal
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Buka [http://localhost:3000](http://localhost:3000) — secara default akan redirect ke `/student/beranda`.
 
-## Learn More
+### Script lain
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run build    # production build
+npm run start    # jalanin hasil build
+npm run lint     # ESLint
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Roadmap singkat
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. ✅ FE mockup semua page siswa (mock data)
+2. 🔜 BE repo: AUTH module (session cookie + Redis, RBAC student/teacher/admin)
+3. 🔜 Swap mock → real API, login page (student/staff)
+4. 🔜 Modul guru: create tugas, quiz, materi
+5. 🔜 Modul admin: CRUD user, kelas, sekolah
