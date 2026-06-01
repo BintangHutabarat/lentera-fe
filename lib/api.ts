@@ -6,8 +6,19 @@ export interface ApiError {
   message: string;
 }
 
-export function isApiError(e: unknown): e is ApiError {
-  return typeof e === "object" && e !== null && "code" in e && "statusCode" in e;
+export class ApiRequestError extends Error {
+  statusCode: number;
+  code: string;
+  constructor({ statusCode, code, message }: ApiError) {
+    super(message);
+    this.name = "ApiRequestError";
+    this.statusCode = statusCode;
+    this.code = code;
+  }
+}
+
+export function isApiError(e: unknown): e is ApiRequestError {
+  return e instanceof ApiRequestError;
 }
 
 // ── Token helpers (cookie, readable server & client) ──────────────────────────
@@ -78,18 +89,18 @@ export async function apiFetch<T>(
     }
     clearAccessToken();
     if (typeof window !== "undefined") window.location.href = "/auth/login/siswa";
-    throw { statusCode: 401, code: "UNAUTHORIZED", message: "Sesi kamu telah berakhir, silakan login kembali." } satisfies ApiError;
+    throw new ApiRequestError({ statusCode: 401, code: "UNAUTHORIZED", message: "Sesi kamu telah berakhir, silakan login kembali." });
   }
 
   if (res.status === 204) return undefined as T;
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({
-      statusCode: res.status,
-      code: "UNKNOWN_ERROR",
-      message: "Terjadi kesalahan, coba lagi.",
-    }));
-    throw err as ApiError;
+    const body = await res.json().catch(() => null);
+    throw new ApiRequestError({
+      statusCode: body?.statusCode ?? res.status,
+      code: body?.code ?? "UNKNOWN_ERROR",
+      message: body?.message ?? "Terjadi kesalahan, coba lagi.",
+    });
   }
 
   return res.json() as Promise<T>;

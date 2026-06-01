@@ -42,6 +42,7 @@ export default function BerandaPage() {
   const [schedule, setSchedule] = useState<ScheduleLesson[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -69,13 +70,23 @@ export default function BerandaPage() {
       setAssignments(assigns);
       setSchedule(sched);
       setLeaderboard(leaders);
+    }).catch((err) => {
+      setError(err?.message ?? "Gagal memuat data.");
     }).finally(() => setLoading(false));
   }, []);
 
-  if (loading || !student) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-40 text-[13px] text-ink-muted">
         Memuat...
+      </div>
+    );
+  }
+
+  if (error || !student) {
+    return (
+      <div className="flex items-center justify-center h-40 px-6 text-center text-[13px] text-ink-muted">
+        {error ?? "Gagal memuat data."}
       </div>
     );
   }

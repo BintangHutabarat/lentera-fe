@@ -32,6 +32,10 @@ export default function LoginStaffPage() {
       const { user } = await loginStaff(email.trim(), password);
       if (user.mustChangePassword) {
         router.push("/auth/change-password");
+      } else if (user.role === "TEACHER") {
+        router.push("/teacher/beranda");
+      } else if (user.role === "ADMIN") {
+        router.push("/admin/beranda");
       } else {
         router.push("/student/beranda");
       }

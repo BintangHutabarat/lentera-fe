@@ -23,7 +23,7 @@ export default function QuizPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getQuizzes().then(setQuizzes).finally(() => setLoading(false));
+    getQuizzes().then(setQuizzes).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
   const pending   = quizzes.filter((q) => !q.completed);

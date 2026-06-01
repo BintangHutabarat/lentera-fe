@@ -1,12 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { UserCog, Bell, Lock, HelpCircle, LogOut, Loader2 } from "lucide-react";
+import { Lock, HelpCircle, LogOut, Loader2, Bell } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { getStudentProfile, getStudentStats, getStudentBadges } from "@/lib/services/student";
-import { logout } from "@/lib/services/auth";
+import { getMe, logout } from "@/lib/services/auth";
 import { Avatar } from "@/components/ui/Avatar";
-import type { StudentProfile, StudentStats, Badge } from "@/lib/services/student";
+import type { TeacherProfile } from "@/lib/services/auth";
 
 interface MenuItem {
   Icon: LucideIcon;
@@ -16,21 +15,15 @@ interface MenuItem {
   onClick?: () => void;
 }
 
-export default function ProfilPage() {
+export default function TeacherProfilPage() {
   const router = useRouter();
-  const [profile, setProfile] = useState<StudentProfile | null>(null);
-  const [stats, setStats] = useState<StudentStats | null>(null);
-  const [badges, setBadges] = useState<Badge[]>([]);
+  const [profile, setProfile] = useState<TeacherProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
-    Promise.all([getStudentProfile(), getStudentStats(), getStudentBadges()])
-      .then(([p, s, b]) => {
-        setProfile(p);
-        setStats(s);
-        setBadges(b);
-      })
+    getMe()
+      .then((user) => setProfile(user.profile as TeacherProfile))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -38,18 +31,21 @@ export default function ProfilPage() {
   const handleLogout = async () => {
     setLoggingOut(true);
     await logout();
-    router.push("/auth/login/siswa");
+    router.push("/auth/login/staff");
   };
 
   const MENU_ITEMS: MenuItem[] = [
-    { Icon: UserCog,    bg: "#E6F6FD", label: "Edit Profil",   danger: false },
     { Icon: Bell,       bg: "#FEF9E7", label: "Notifikasi",    danger: false },
     { Icon: Lock,       bg: "#E3FBF5", label: "Keamanan Akun", danger: false },
     { Icon: HelpCircle, bg: "#EAFBF2", label: "Bantuan & FAQ", danger: false },
     { Icon: LogOut,     bg: "#FEF0EF", label: "Keluar",        danger: true, onClick: handleLogout },
   ];
 
-  if (loading || !profile || !stats) {
+  const initials = profile?.name
+    ? profile.name.split(" ").slice(0, 2).map((n) => n[0]).join("")
+    : "GR";
+
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-40 text-[13px] text-ink-muted">
         Memuat...
@@ -57,11 +53,8 @@ export default function ProfilPage() {
     );
   }
 
-  const initials = profile.name.split(" ").slice(0, 2).map((n) => n[0]).join("");
-
   return (
     <>
-      {/* Hero */}
       <div
         className="relative overflow-hidden px-[18px] pb-14 pt-[26px] text-center"
         style={{ background: "linear-gradient(135deg,#2B9FD8 0%,#3DD6B5 60%,#7EEFC7 100%)" }}
@@ -74,47 +67,27 @@ export default function ProfilPage() {
           size="lg"
           className="border-[3px] border-white/40 mx-auto mb-2.5"
         />
-        <div className="text-[18px] font-extrabold text-white">{profile.name}</div>
-        <div className="text-[12px] text-white/80 mt-1">{profile.class.name} • {profile.school.name}</div>
+        <div className="text-[18px] font-extrabold text-white">{profile?.name ?? "—"}</div>
+        <div className="text-[12px] text-white/80 mt-1">
+          {profile?.title ? `${profile.title} • ` : ""}{profile?.school ?? ""}
+        </div>
       </div>
 
       <div className="px-3.5">
-        {/* Stats float card */}
         <div className="card -mt-7 relative z-10 mb-3.5">
-          <div className="grid grid-cols-3 text-center divide-x divide-border">
+          <div className="grid grid-cols-2 text-center divide-x divide-border">
             {[
-              { val: profile.level,               color: "#2B9FD8", label: "Level" },
-              { val: profile.xp.toLocaleString(), color: "#7a5c00", label: "Total XP" },
-              { val: `${stats.attendance}%`,       color: "#3DD6B5", label: "Kehadiran" },
+              { val: profile?.nip ?? "—", color: "#2B9FD8", label: "NIP" },
+              { val: "Guru",              color: "#3DD6B5", label: "Role" },
             ].map((item) => (
               <div key={item.label} className="py-3">
-                <div className="text-[19px] font-extrabold" style={{ color: item.color }}>{item.val}</div>
+                <div className="text-[13px] font-extrabold truncate px-2" style={{ color: item.color }}>{item.val}</div>
                 <div className="text-[10px] text-ink-muted mt-0.5">{item.label}</div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Badges */}
-        <h3 className="text-[14px] font-extrabold text-ink mb-2.5">Lencana Saya</h3>
-        <div className="card p-4 mb-3.5">
-          <div className="flex gap-1.5 flex-wrap">
-            {badges.map((b) => (
-              <span
-                key={b.id}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                  b.earned
-                    ? "bg-yellow-light text-yellow-dark"
-                    : "bg-surface-soft text-ink-muted"
-                }`}
-              >
-                {b.icon} {b.label}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Menu */}
         <h3 className="text-[14px] font-extrabold text-ink mb-2.5">Pengaturan Akun</h3>
         <div className="card mb-3.5">
           {MENU_ITEMS.map(({ Icon, bg, label, danger, onClick }, i) => (

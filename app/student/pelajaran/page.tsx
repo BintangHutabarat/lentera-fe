@@ -12,7 +12,7 @@ export default function PelajaranPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getSubjects().then(setSubjects).finally(() => setLoading(false));
+    getSubjects().then(setSubjects).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
   return (

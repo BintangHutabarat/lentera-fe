@@ -25,6 +25,7 @@ export default function ForumPage() {
         const name = (me.profile as { name: string }).name ?? "";
         setMyInitials(name.split(" ").slice(0, 2).map((n: string) => n[0]).join(""));
       })
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 

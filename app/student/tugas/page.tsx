@@ -24,7 +24,7 @@ export default function TugasPage() {
   const [filter, setFilter] = useState<Filter>("semua");
 
   useEffect(() => {
-    getAssignments().then(setAssignments).finally(() => setLoading(false));
+    getAssignments().then(setAssignments).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
   const filtered = filter === "semua"
