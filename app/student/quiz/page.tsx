@@ -1,9 +1,12 @@
+"use client";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Flame, Gamepad2 } from "lucide-react";
-import { mockQuizzes } from "@/lib/mock-data";
+import { getQuizzes } from "@/lib/services/quizzes";
 import { PageTopbar } from "@/components/layout/PageTopbar";
 import { subjectColorMap } from "@/lib/utils";
 import { subjectIcons } from "@/lib/icons";
+import type { QuizListItem } from "@/lib/services/quizzes";
 
 function Stars({ count }: { count: number }) {
   return (
@@ -16,15 +19,21 @@ function Stars({ count }: { count: number }) {
 }
 
 export default function QuizPage() {
-  const pending   = mockQuizzes.filter((q) => !q.completed);
-  const completed = mockQuizzes.filter((q) => q.completed);
+  const [quizzes, setQuizzes] = useState<QuizListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getQuizzes().then(setQuizzes).finally(() => setLoading(false));
+  }, []);
+
+  const pending   = quizzes.filter((q) => !q.completed);
+  const completed = quizzes.filter((q) => q.completed);
 
   return (
     <>
       <PageTopbar title="Quiz & Latihan" subtitle="Asah kemampuan kamu!" />
       <div className="px-3.5 pt-3.5">
 
-        {/* Daily Challenge Banner */}
         <div
           className="relative overflow-hidden rounded-card p-[18px] mb-3.5"
           style={{ background: "linear-gradient(135deg,#2B9FD8 0%,#3DD6B5 60%,#7EEFC7 100%)" }}
@@ -42,66 +51,82 @@ export default function QuizPage() {
           </button>
         </div>
 
-        {/* Pending */}
-        <h3 className="text-[14px] font-extrabold text-ink mb-2.5">Quiz Tersedia</h3>
-        <div className="flex flex-col gap-2.5 mb-3.5">
-          {pending.map((q) => {
-            const c = subjectColorMap[q.subjectColor];
-            const SubjIcon = subjectIcons[q.subjectColor];
-            return (
-              <Link
-                key={q.id}
-                href={`/student/quiz/${q.id}`}
-                className="card p-3.5 flex gap-3 items-center cursor-pointer hover:border-brand-teal transition-all active:scale-[0.99]"
-              >
-                <div
-                  className="w-[42px] h-[42px] rounded-[12px] flex items-center justify-center flex-shrink-0"
-                  style={{ background: `${c.bar}22` }}
-                >
-                  <SubjIcon size={22} strokeWidth={1.5} style={{ color: c.bar }} />
+        {loading ? (
+          <div className="flex items-center justify-center h-40 text-[13px] text-ink-muted">
+            Memuat...
+          </div>
+        ) : (
+          <>
+            <h3 className="text-[14px] font-extrabold text-ink mb-2.5">Quiz Tersedia</h3>
+            <div className="flex flex-col gap-2.5 mb-3.5">
+              {pending.length === 0 && (
+                <div className="card p-4 text-center text-[12px] text-ink-muted">
+                  Semua quiz sudah dikerjakan!
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[13px] font-extrabold text-ink">{q.title} — {q.subject}</div>
-                  <div className="text-[11px] text-ink-muted mt-1">
-                    {q.totalQuestions} soal • {q.durationMinutes} menit • {q.chapter}
-                  </div>
-                </div>
-                <div className="text-right flex-shrink-0">
-                  <div className="text-[13px] font-extrabold" style={{ color: c.bar }}>Mulai</div>
-                  <div className="text-[10px] text-ink-muted">Belum dikerjakan</div>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+              )}
+              {pending.map((q) => {
+                const c = subjectColorMap[q.subject.color];
+                const SubjIcon = subjectIcons[q.subject.color];
+                return (
+                  <Link
+                    key={q.id}
+                    href={`/student/quiz/${q.id}`}
+                    className="card p-3.5 flex gap-3 items-center cursor-pointer hover:border-brand-teal transition-all active:scale-[0.99]"
+                  >
+                    <div
+                      className="w-[42px] h-[42px] rounded-[12px] flex items-center justify-center flex-shrink-0"
+                      style={{ background: `${c.bar}22` }}
+                    >
+                      <SubjIcon size={22} strokeWidth={1.5} style={{ color: c.bar }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] font-extrabold text-ink">{q.title} — {q.subject.name}</div>
+                      <div className="text-[11px] text-ink-muted mt-1">
+                        {q.totalQuestions} soal • {q.durationMinutes} menit • {q.chapter}
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <div className="text-[13px] font-extrabold" style={{ color: c.bar }}>Mulai</div>
+                      <div className="text-[10px] text-ink-muted">Belum dikerjakan</div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
 
-        {/* Completed */}
-        <h3 className="text-[14px] font-extrabold text-ink mb-2.5">Sudah Dikerjakan</h3>
-        <div className="flex flex-col gap-2.5 mb-3.5">
-          {completed.map((q) => {
-            const c = subjectColorMap[q.subjectColor];
-            const SubjIcon = subjectIcons[q.subjectColor];
-            return (
-              <div key={q.id} className="card p-3.5 flex gap-3 items-center">
-                <div
-                  className="w-[42px] h-[42px] rounded-[12px] flex items-center justify-center flex-shrink-0"
-                  style={{ background: `${c.bar}22` }}
-                >
-                  <SubjIcon size={22} strokeWidth={1.5} style={{ color: c.bar }} />
+            <h3 className="text-[14px] font-extrabold text-ink mb-2.5">Sudah Dikerjakan</h3>
+            <div className="flex flex-col gap-2.5 mb-3.5">
+              {completed.length === 0 && (
+                <div className="card p-4 text-center text-[12px] text-ink-muted">
+                  Belum ada quiz yang selesai.
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[13px] font-extrabold text-ink">{q.title} — {q.subject}</div>
-                  <div className="text-[11px] text-ink-muted mt-0.5">{q.totalQuestions} soal • {q.chapter}</div>
-                  {q.stars && <Stars count={q.stars} />}
-                </div>
-                <div className="text-right flex-shrink-0">
-                  <div className="text-[18px] font-extrabold" style={{ color: c.bar }}>{q.score}</div>
-                  <div className="text-[10px] text-ink-muted">Nilai kamu</div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              )}
+              {completed.map((q) => {
+                const c = subjectColorMap[q.subject.color];
+                const SubjIcon = subjectIcons[q.subject.color];
+                return (
+                  <div key={q.id} className="card p-3.5 flex gap-3 items-center">
+                    <div
+                      className="w-[42px] h-[42px] rounded-[12px] flex items-center justify-center flex-shrink-0"
+                      style={{ background: `${c.bar}22` }}
+                    >
+                      <SubjIcon size={22} strokeWidth={1.5} style={{ color: c.bar }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] font-extrabold text-ink">{q.title} — {q.subject.name}</div>
+                      <div className="text-[11px] text-ink-muted mt-0.5">{q.totalQuestions} soal • {q.chapter}</div>
+                      {q.lastStars && <Stars count={q.lastStars} />}
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <div className="text-[18px] font-extrabold" style={{ color: c.bar }}>{q.lastScore}</div>
+                      <div className="text-[10px] text-ink-muted">Nilai kamu</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
       </div>
     </>
   );

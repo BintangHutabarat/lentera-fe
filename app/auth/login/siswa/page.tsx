@@ -4,6 +4,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, GraduationCap, IdCard, Lock, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { loginStudent } from "@/lib/services/auth";
+import { isApiError } from "@/lib/api";
+
+const ERROR_MESSAGES: Record<string, string> = {
+  INVALID_CREDENTIALS: "NIS atau password salah.",
+  ACCOUNT_DISABLED: "Akun kamu dinonaktifkan. Hubungi guru atau admin sekolahmu.",
+};
 
 export default function LoginSiswaPage() {
   const router = useRouter();
@@ -20,9 +27,20 @@ export default function LoginSiswaPage() {
     if (!canSubmit) return;
     setError(null);
     setSubmitting(true);
-    // Placeholder: BE belum siap. Fake delay biar UX-nya kerasa.
-    await new Promise((r) => setTimeout(r, 600));
-    router.push("/student/beranda");
+    try {
+      const { user } = await loginStudent(nis.trim(), password);
+      if (user.mustChangePassword) {
+        router.push("/auth/change-password");
+      } else {
+        router.push("/student/beranda");
+      }
+    } catch (err) {
+      const msg = isApiError(err)
+        ? (ERROR_MESSAGES[err.code] ?? err.message)
+        : "Terjadi kesalahan, coba lagi.";
+      setError(msg);
+      setSubmitting(false);
+    }
   };
 
   return (

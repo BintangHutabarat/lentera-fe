@@ -3,85 +3,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   AlertCircle, ArrowLeft, Check, ChevronLeft, ChevronRight,
-  Clock, Grid3x3, Sparkles, Trophy, X,
+  Clock, Grid3x3, Loader2, Sparkles, Trophy, X,
 } from "lucide-react";
-import { mockQuizzes } from "@/lib/mock-data";
+import { getQuizzes, startQuiz, saveAnswer, submitQuiz } from "@/lib/services/quizzes";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Chip } from "@/components/ui/Chip";
 import { cn, subjectColorMap } from "@/lib/utils";
-
-type OptionId = "a" | "b" | "c" | "d";
-interface QuizOption { id: OptionId; text: string }
-interface QuizQuestion {
-  id: string;
-  text: string;
-  options: QuizOption[];
-  correctOptionId: OptionId;
-  explanation: string;
-}
-
-const SAMPLE_QUESTIONS: QuizQuestion[] = [
-  {
-    id: "qq-1",
-    text: "Hasil dari ∫ (3x² + 2x) dx adalah ...",
-    options: [
-      { id: "a", text: "x³ + x² + C" },
-      { id: "b", text: "x³ + 2x² + C" },
-      { id: "c", text: "6x + 2 + C" },
-      { id: "d", text: "3x³ + x² + C" },
-    ],
-    correctOptionId: "a",
-    explanation: "∫ 3x² dx = x³ dan ∫ 2x dx = x². Jumlahkan keduanya lalu tambahkan konstanta integrasi C → x³ + x² + C.",
-  },
-  {
-    id: "qq-2",
-    text: "Nilai dari ∫₀¹ (2x + 1) dx adalah ...",
-    options: [
-      { id: "a", text: "1" },
-      { id: "b", text: "2" },
-      { id: "c", text: "3" },
-      { id: "d", text: "4" },
-    ],
-    correctOptionId: "b",
-    explanation: "Anti-turunan: x² + x. Substitusi batas atas dikurangi batas bawah: (1 + 1) − (0 + 0) = 2.",
-  },
-  {
-    id: "qq-3",
-    text: "∫ cos(x) dx = ...",
-    options: [
-      { id: "a", text: "−sin(x) + C" },
-      { id: "b", text: "sin(x) + C" },
-      { id: "c", text: "−cos(x) + C" },
-      { id: "d", text: "tan(x) + C" },
-    ],
-    correctOptionId: "b",
-    explanation: "Turunan sin(x) adalah cos(x), jadi anti-turunan cos(x) adalah sin(x) + C.",
-  },
-  {
-    id: "qq-4",
-    text: "Luas daerah yang dibatasi oleh y = x², sumbu-x, x = 0, dan x = 2 adalah ...",
-    options: [
-      { id: "a", text: "2/3 satuan luas" },
-      { id: "b", text: "4/3 satuan luas" },
-      { id: "c", text: "8/3 satuan luas" },
-      { id: "d", text: "16/3 satuan luas" },
-    ],
-    correctOptionId: "c",
-    explanation: "∫₀² x² dx = [x³/3]₀² = 8/3 − 0 = 8/3.",
-  },
-  {
-    id: "qq-5",
-    text: "∫ (1/x) dx untuk x > 0 adalah ...",
-    options: [
-      { id: "a", text: "x + C" },
-      { id: "b", text: "ln|x| + C" },
-      { id: "c", text: "−1/x² + C" },
-      { id: "d", text: "1/(2x²) + C" },
-    ],
-    correctOptionId: "b",
-    explanation: "1/x adalah kasus khusus dari aturan pangkat. Anti-turunannya adalah ln|x| + C.",
-  },
-];
+import type { QuizListItem, QuizSession, QuizResult } from "@/lib/services/quizzes";
 
 function fmtTime(sec: number) {
   const m = Math.floor(sec / 60).toString().padStart(2, "0");
@@ -89,81 +17,89 @@ function fmtTime(sec: number) {
   return `${m}:${s}`;
 }
 
-type ViewMode = "quiz" | "result" | "review";
+type ViewMode = "loading" | "quiz" | "result" | "review";
 
 export default function QuizDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const quiz = mockQuizzes.find((q) => q.id === params.id);
 
-  const subjectColor = quiz?.subjectColor ?? "blue";
-  const c = subjectColorMap[subjectColor];
+  const [quiz, setQuiz] = useState<QuizListItem | null>(null);
+  const [session, setSession] = useState<QuizSession | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const questions = SAMPLE_QUESTIONS;
-  const total = questions.length;
-  const durationSec = (quiz?.durationMinutes ?? 15) * 60;
-
-  const [view, setView] = useState<ViewMode>("quiz");
+  const [view, setView] = useState<ViewMode>("loading");
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, OptionId>>({});
+  const [answers, setAnswers] = useState<Record<string, string>>({});
   const [showPalette, setShowPalette] = useState(false);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(durationSec);
+  const [submitting, setSubmitting] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [result, setResult] = useState<QuizResult | null>(null);
 
+  useEffect(() => {
+    Promise.all([getQuizzes(), startQuiz(params.id)])
+      .then(([quizzes, sess]) => {
+        setQuiz(quizzes.find((q) => q.id === params.id) ?? null);
+        setSession(sess);
+        setAnswers(sess.existingAnswers ?? {});
+        const remaining = Math.max(0, Math.floor((new Date(sess.expiresAt).getTime() - Date.now()) / 1000));
+        setTimeLeft(remaining);
+        setView("quiz");
+      })
+      .catch((err) => {
+        setLoadError(err?.message ?? "Gagal memuat quiz.");
+        setView("quiz");
+      });
+  }, [params.id]);
+
+  // Timer
   useEffect(() => {
     if (view !== "quiz" || timeLeft <= 0) return;
     const t = setInterval(() => setTimeLeft((s) => Math.max(0, s - 1)), 1000);
     return () => clearInterval(t);
   }, [view, timeLeft]);
 
+  // Auto-submit when time runs out
   useEffect(() => {
-    if (view === "quiz" && timeLeft === 0) {
-      setShowPalette(false);
-      setShowSubmitConfirm(false);
-      setView("result");
+    if (view === "quiz" && timeLeft === 0 && session) {
+      handleSubmit();
     }
-  }, [view, timeLeft]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeLeft]);
 
-  const current = questions[currentIndex];
-  const answeredCount = Object.keys(answers).length;
-  const progress = ((currentIndex + 1) / total) * 100;
-  const isLast = currentIndex === total - 1;
-  const selectedOption = answers[current.id];
-  const allAnswered = answeredCount === total;
-  const lowTime = timeLeft < 60;
-
-  const score = useMemo(() => {
-    if (view === "quiz") return null;
-    let correct = 0;
-    for (const q of questions) if (answers[q.id] === q.correctOptionId) correct++;
-    const ratio = correct / total;
-    return {
-      correct,
-      incorrect: answeredCount - correct,
-      skipped: total - answeredCount,
-      percent: Math.round(ratio * 100),
-      stars:
-        ratio >= 0.9 ? 5 :
-        ratio >= 0.8 ? 4 :
-        ratio >= 0.7 ? 3 :
-        ratio >= 0.6 ? 2 : 1,
-      timeUsed: durationSec - timeLeft,
-    };
-  }, [view, answers, answeredCount, total, durationSec, timeLeft, questions]);
-
-  const handleSelect = (optId: OptionId) =>
-    setAnswers((prev) => ({ ...prev, [current.id]: optId }));
-
-  const handleSubmit = () => {
-    setView("result");
-    setShowSubmitConfirm(false);
-    setShowPalette(false);
+  const handleSelect = (questionId: string, optionId: string) => {
+    setAnswers((prev) => ({ ...prev, [questionId]: optionId }));
+    if (session) {
+      saveAnswer(session.sessionId, questionId, optionId).catch(() => {});
+    }
   };
 
-  if (!quiz) {
+  const handleSubmit = async () => {
+    if (!session) return;
+    setSubmitting(true);
+    setShowSubmitConfirm(false);
+    setShowPalette(false);
+    try {
+      const res = await submitQuiz(session.sessionId, answers);
+      setResult(res);
+      setView("result");
+    } catch {
+      setSubmitting(false);
+    }
+  };
+
+  if (view === "loading") {
+    return (
+      <div className="min-h-dvh flex items-center justify-center">
+        <Loader2 size={28} className="animate-spin text-brand-blue" />
+      </div>
+    );
+  }
+
+  if (loadError || !session || !quiz) {
     return (
       <div className="px-3.5 pt-10 text-center">
-        <p className="text-[14px] text-ink-muted">Quiz tidak ditemukan.</p>
+        <p className="text-[14px] text-ink-muted">{loadError ?? "Quiz tidak ditemukan."}</p>
         <button
           onClick={() => router.push("/student/quiz")}
           className="mt-3 text-[12px] font-bold text-brand-blue cursor-pointer"
@@ -174,7 +110,19 @@ export default function QuizDetailPage() {
     );
   }
 
-  if (view === "result" && score) {
+  const subjectColor = quiz.subject.color;
+  const c = subjectColorMap[subjectColor];
+  const questions = session.questions;
+  const total = questions.length;
+  const current = questions[currentIndex];
+  const answeredCount = Object.keys(answers).length;
+  const isLast = currentIndex === total - 1;
+  const selectedOption = answers[current?.id ?? ""];
+  const allAnswered = answeredCount === total;
+  const lowTime = timeLeft < 60;
+  const progress = ((currentIndex + 1) / total) * 100;
+
+  if (view === "result" && result) {
     return (
       <div className="min-h-dvh flex flex-col bg-surface-page">
         <div
@@ -185,29 +133,21 @@ export default function QuizDetailPage() {
             <Trophy size={32} className="text-white" />
           </div>
           <h2 className="text-[20px] font-extrabold mb-1">
-            {score.percent >= 80 ? "Hebat!" : score.percent >= 60 ? "Bagus, terus berlatih!" : "Yuk coba lagi!"}
+            {result.score >= 80 ? "Hebat!" : result.score >= 60 ? "Bagus, terus berlatih!" : "Yuk coba lagi!"}
           </h2>
           <p className="text-[12px] text-white/85">
             {timeLeft === 0 ? "Waktu habis — jawaban otomatis dikumpulkan" : "Quiz selesai dikerjakan"}
           </p>
-
           <div className="mt-5 inline-flex items-baseline gap-1">
-            <span className="text-[56px] font-extrabold leading-none">{score.percent}</span>
+            <span className="text-[56px] font-extrabold leading-none">{result.score}</span>
             <span className="text-[20px] font-bold text-white/85">%</span>
           </div>
           <div className="text-[12px] text-white/80 mt-1">
-            {score.correct} dari {total} jawaban benar
+            {result.correct} dari {result.total} jawaban benar
           </div>
-
           <div className="flex justify-center gap-0.5 mt-3">
             {Array.from({ length: 5 }).map((_, i) => (
-              <span
-                key={i}
-                className="text-[22px]"
-                style={{ color: i < score.stars ? "#F5C518" : "rgba(255,255,255,0.35)" }}
-              >
-                ★
-              </span>
+              <span key={i} className="text-[22px]" style={{ color: i < result.stars ? "#F5C518" : "rgba(255,255,255,0.35)" }}>★</span>
             ))}
           </div>
         </div>
@@ -215,15 +155,15 @@ export default function QuizDetailPage() {
         <div className="flex-1 px-3.5 pt-4">
           <div className="grid grid-cols-3 gap-2.5 mb-3.5">
             <div className="card p-3 text-center">
-              <div className="text-[18px] font-extrabold text-teal-dark">{score.correct}</div>
+              <div className="text-[18px] font-extrabold text-teal-dark">{result.correct}</div>
               <div className="text-[10px] text-ink-muted mt-0.5">Benar</div>
             </div>
             <div className="card p-3 text-center">
-              <div className="text-[18px] font-extrabold text-red-dark">{score.incorrect}</div>
+              <div className="text-[18px] font-extrabold text-red-dark">{result.incorrect}</div>
               <div className="text-[10px] text-ink-muted mt-0.5">Salah</div>
             </div>
             <div className="card p-3 text-center">
-              <div className="text-[18px] font-extrabold text-ink-muted">{score.skipped}</div>
+              <div className="text-[18px] font-extrabold text-ink-muted">{result.skipped}</div>
               <div className="text-[10px] text-ink-muted mt-0.5">Kosong</div>
             </div>
           </div>
@@ -234,9 +174,9 @@ export default function QuizDetailPage() {
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-[11px] text-ink-muted">Waktu pengerjaan</div>
-              <div className="text-[14px] font-extrabold text-ink">{fmtTime(score.timeUsed)}</div>
+              <div className="text-[14px] font-extrabold text-ink">{fmtTime(result.timeUsedSeconds)}</div>
             </div>
-            <Chip variant="blue">+{score.correct * 10} XP</Chip>
+            <Chip variant="blue">+{result.xpEarned} XP</Chip>
           </div>
 
           <div className="flex flex-col gap-2.5 pb-8">
@@ -258,14 +198,13 @@ export default function QuizDetailPage() {
     );
   }
 
-  if (view === "review") {
+  if (view === "review" && result) {
     return (
       <div className="min-h-dvh bg-surface-page">
         <header className="bg-surface-card border-b border-border px-3.5 py-3 flex items-center gap-3 sticky top-0 z-10">
           <button
             onClick={() => setView("result")}
             className="w-9 h-9 rounded-[10px] flex items-center justify-center hover:bg-surface-soft transition-colors cursor-pointer"
-            aria-label="Kembali ke hasil"
           >
             <ArrowLeft size={18} className="text-ink" />
           </button>
@@ -276,12 +215,11 @@ export default function QuizDetailPage() {
         </header>
 
         <div className="px-3.5 pt-3.5 pb-10 flex flex-col gap-2.5">
-          {questions.map((q, idx) => {
-            const myAns = answers[q.id];
-            const isCorrect = myAns === q.correctOptionId;
-            const isSkipped = !myAns;
+          {result.review.map((r, idx) => {
+            const isSkipped = !r.myAnswer;
+            const isCorrect = r.isCorrect;
             return (
-              <div key={q.id} className="card p-4">
+              <div key={r.questionId} className="card p-4">
                 <div className="flex items-center gap-2 mb-2.5">
                   <div className="w-6 h-6 rounded-full bg-surface-soft text-[11px] font-extrabold text-ink flex items-center justify-center">
                     {idx + 1}
@@ -289,21 +227,17 @@ export default function QuizDetailPage() {
                   {isSkipped ? (
                     <Chip variant="soft">Kosong</Chip>
                   ) : isCorrect ? (
-                    <Chip variant="teal">
-                      <Check size={10} className="inline mr-0.5" /> Benar
-                    </Chip>
+                    <Chip variant="teal"><Check size={10} className="inline mr-0.5" /> Benar</Chip>
                   ) : (
-                    <Chip variant="red">
-                      <X size={10} className="inline mr-0.5" /> Salah
-                    </Chip>
+                    <Chip variant="red"><X size={10} className="inline mr-0.5" /> Salah</Chip>
                   )}
                 </div>
-                <p className="text-[13px] font-bold text-ink mb-3 leading-relaxed">{q.text}</p>
+                <p className="text-[13px] font-bold text-ink mb-3 leading-relaxed">{r.text}</p>
 
                 <div className="flex flex-col gap-1.5 mb-2.5">
-                  {q.options.map((opt) => {
-                    const isMine = opt.id === myAns;
-                    const isAnswer = opt.id === q.correctOptionId;
+                  {r.options.map((opt) => {
+                    const isMine = opt.id === r.myAnswer;
+                    const isAnswer = opt.id === r.correctOptionId;
                     const box = isAnswer
                       ? "bg-teal-light border-[#3DD6B5] text-teal-dark"
                       : isMine
@@ -329,7 +263,7 @@ export default function QuizDetailPage() {
                   <Sparkles size={14} className="text-brand-blue flex-shrink-0 mt-0.5" />
                   <div className="min-w-0">
                     <div className="text-[11px] font-extrabold text-blue-dark mb-0.5">Pembahasan</div>
-                    <div className="text-[11px] text-ink-secondary leading-relaxed">{q.explanation}</div>
+                    <div className="text-[11px] text-ink-secondary leading-relaxed">{r.explanation}</div>
                   </div>
                 </div>
               </div>
@@ -340,6 +274,9 @@ export default function QuizDetailPage() {
     );
   }
 
+  // Quiz view
+  if (!current) return null;
+
   return (
     <div className="min-h-dvh flex flex-col bg-surface-page">
       <header className="bg-surface-card border-b border-border px-3.5 py-3 sticky top-0 z-10">
@@ -347,16 +284,13 @@ export default function QuizDetailPage() {
           <button
             onClick={() => router.push("/student/quiz")}
             className="w-9 h-9 rounded-[10px] flex items-center justify-center hover:bg-surface-soft transition-colors cursor-pointer"
-            aria-label="Keluar dari quiz"
           >
             <X size={18} className="text-ink" />
           </button>
-
           <div className="flex-1 min-w-0">
             <div className="text-[13px] font-extrabold text-ink truncate">{quiz.title}</div>
-            <div className="text-[10px] text-ink-muted truncate">{quiz.subject} • {quiz.chapter}</div>
+            <div className="text-[10px] text-ink-muted truncate">{quiz.subject.name} • {quiz.chapter}</div>
           </div>
-
           <div
             className={cn(
               "flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] font-extrabold tabular-nums",
@@ -367,7 +301,6 @@ export default function QuizDetailPage() {
             {fmtTime(timeLeft)}
           </div>
         </div>
-
         <div className="mt-2.5 flex items-center gap-2.5">
           <ProgressBar value={progress} height="sm" color={c.bar} className="flex-1" />
           <span className="text-[11px] font-bold text-ink-muted tabular-nums whitespace-nowrap">
@@ -385,7 +318,7 @@ export default function QuizDetailPage() {
             >
               {currentIndex + 1}
             </div>
-            <Chip variant={subjectColor}>{quiz.subject}</Chip>
+            <Chip variant={subjectColor}>{quiz.subject.name}</Chip>
           </div>
           <p className="text-[15px] font-bold text-ink leading-relaxed">{current.text}</p>
         </div>
@@ -396,7 +329,7 @@ export default function QuizDetailPage() {
             return (
               <button
                 key={opt.id}
-                onClick={() => handleSelect(opt.id)}
+                onClick={() => handleSelect(current.id, opt.id)}
                 className={cn(
                   "w-full text-left rounded-[12px] border px-3.5 py-3 flex items-center gap-3 transition-all active:scale-[0.99] cursor-pointer",
                   selected
@@ -430,7 +363,6 @@ export default function QuizDetailPage() {
           onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
           disabled={currentIndex === 0}
           className="w-11 h-11 rounded-[12px] border border-border bg-surface-card flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition-transform cursor-pointer"
-          aria-label="Soal sebelumnya"
         >
           <ChevronLeft size={18} className="text-ink" />
         </button>
@@ -446,15 +378,16 @@ export default function QuizDetailPage() {
         {isLast ? (
           <button
             onClick={() => setShowSubmitConfirm(true)}
-            className="h-11 px-5 rounded-[12px] bg-brand-blue text-white text-[13px] font-extrabold active:scale-[0.98] transition-transform cursor-pointer"
+            disabled={submitting}
+            className="h-11 px-5 rounded-[12px] bg-brand-blue text-white text-[13px] font-extrabold active:scale-[0.98] transition-transform cursor-pointer disabled:opacity-60 flex items-center gap-1.5"
           >
+            {submitting && <Loader2 size={14} className="animate-spin" />}
             Kumpulkan
           </button>
         ) : (
           <button
             onClick={() => setCurrentIndex((i) => Math.min(total - 1, i + 1))}
             className="w-11 h-11 rounded-[12px] bg-brand-blue flex items-center justify-center active:scale-95 transition-transform cursor-pointer"
-            aria-label="Soal berikutnya"
           >
             <ChevronRight size={18} className="text-white" />
           </button>
@@ -481,16 +414,11 @@ export default function QuizDetailPage() {
                 return (
                   <button
                     key={q.id}
-                    onClick={() => {
-                      setCurrentIndex(idx);
-                      setShowPalette(false);
-                    }}
+                    onClick={() => { setCurrentIndex(idx); setShowPalette(false); }}
                     className={cn(
                       "aspect-square rounded-[10px] border text-[13px] font-extrabold flex items-center justify-center transition-all cursor-pointer",
                       isCurrent && "ring-2 ring-brand-blue ring-offset-1",
-                      isAnswered
-                        ? "bg-brand-blue text-white border-brand-blue"
-                        : "bg-surface-card text-ink border-border",
+                      isAnswered ? "bg-brand-blue text-white border-brand-blue" : "bg-surface-card text-ink border-border",
                     )}
                   >
                     {idx + 1}
@@ -499,17 +427,10 @@ export default function QuizDetailPage() {
               })}
             </div>
             <div className="flex gap-3 text-[10px] text-ink-muted mb-3">
-              <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-[3px] bg-brand-blue" /> Terjawab
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-[3px] bg-surface-card border border-border" /> Kosong
-              </span>
+              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-[3px] bg-brand-blue" /> Terjawab</span>
+              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-[3px] bg-surface-card border border-border" /> Kosong</span>
             </div>
-            <button
-              onClick={() => setShowPalette(false)}
-              className="w-full py-2.5 rounded-[10px] bg-surface-soft text-[12px] font-extrabold text-ink cursor-pointer"
-            >
+            <button onClick={() => setShowPalette(false)} className="w-full py-2.5 rounded-[10px] bg-surface-soft text-[12px] font-extrabold text-ink cursor-pointer">
               Tutup
             </button>
           </div>
@@ -519,10 +440,7 @@ export default function QuizDetailPage() {
       {showSubmitConfirm && (
         <div className="fixed inset-0 z-30 flex items-center justify-center p-5" onClick={() => setShowSubmitConfirm(false)}>
           <div className="absolute inset-0 bg-ink/50" />
-          <div
-            className="relative bg-surface-card rounded-[16px] p-5 w-full max-w-sm"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="relative bg-surface-card rounded-[16px] p-5 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-center mb-3">
               <div className="w-12 h-12 rounded-full bg-yellow-light flex items-center justify-center">
                 <AlertCircle size={24} className="text-yellow-dark" />
@@ -537,16 +455,15 @@ export default function QuizDetailPage() {
                 : `${total - answeredCount} soal belum dijawab. Yakin mau kumpulkan sekarang?`}
             </p>
             <div className="flex gap-2.5">
-              <button
-                onClick={() => setShowSubmitConfirm(false)}
-                className="flex-1 py-2.5 rounded-[12px] bg-surface-soft text-[12px] font-extrabold text-ink cursor-pointer"
-              >
+              <button onClick={() => setShowSubmitConfirm(false)} className="flex-1 py-2.5 rounded-[12px] bg-surface-soft text-[12px] font-extrabold text-ink cursor-pointer">
                 Batal
               </button>
               <button
                 onClick={handleSubmit}
-                className="flex-1 py-2.5 rounded-[12px] bg-brand-blue text-white text-[12px] font-extrabold cursor-pointer"
+                disabled={submitting}
+                className="flex-1 py-2.5 rounded-[12px] bg-brand-blue text-white text-[12px] font-extrabold cursor-pointer disabled:opacity-60 flex items-center justify-center gap-1.5"
               >
+                {submitting && <Loader2 size={13} className="animate-spin" />}
                 Kumpulkan
               </button>
             </div>

@@ -1,126 +1,19 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   AlertCircle, ArrowLeft, CalendarClock, CheckCircle2, Download,
-  FileCheck2, FileText, GraduationCap, ListChecks, MessageSquareText,
-  Paperclip, Star, Upload, X,
+  FileCheck2, FileText, GraduationCap, ListChecks, Loader2,
+  MessageSquareText, Paperclip, Star, Upload, X,
 } from "lucide-react";
-import { mockAssignments } from "@/lib/mock-data";
+import { getAssignment, submitAssignment } from "@/lib/services/assignments";
+import { presignUpload, uploadFile } from "@/lib/services/uploads";
+import { isApiError } from "@/lib/api";
 import { Chip } from "@/components/ui/Chip";
 import { ProgressBar } from "@/components/ui/ProgressBar";
-import { cn, dueUrgencyStyles, subjectColorMap } from "@/lib/utils";
+import { cn, dueUrgencyStyles, getDueUrgency, getDueLabel, subjectColorMap } from "@/lib/utils";
 import { subjectIcons } from "@/lib/icons";
-
-interface AssignmentDetail {
-  description: string;
-  instructions: string[];
-  attachment?: { name: string; sizeKB: number };
-  rubric: { label: string; max: number; earned?: number }[];
-  minWords?: number;
-  submission?: {
-    kind: "file" | "text";
-    fileName?: string;
-    fileSizeKB?: number;
-    text?: string;
-    note?: string;
-    submittedAt: string;
-  };
-  feedback?: string;
-  feedbackFrom?: string;
-}
-
-const DETAILS: Record<string, AssignmentDetail> = {
-  a1: {
-    description:
-      "Kerjakan 20 soal pilihan ganda tentang penerapan integral tertentu. Soal dikumpulkan online melalui platform ini sebelum pukul 23:59 hari ini.",
-    instructions: [
-      "Baca soal dengan teliti sebelum menjawab.",
-      "Boleh menggunakan kalkulator non-grafik.",
-      "Jawaban yang sudah dikumpulkan tidak bisa diubah.",
-      "Nilai akan keluar maksimal 1 hari setelah deadline.",
-    ],
-    rubric: [{ label: "Jawaban benar (20 soal × 5 poin)", max: 100 }],
-  },
-  a2: {
-    description:
-      "Buat laporan praktikum gelombang yang sudah dilakukan di Lab IPA. Format: PDF, font Times New Roman 12, spasi 1.5.",
-    instructions: [
-      "Sertakan: tujuan, alat & bahan, prosedur, data pengamatan, pembahasan, kesimpulan.",
-      "Lampirkan minimal 3 dokumentasi foto kegiatan praktikum.",
-      "Cantumkan referensi minimal 2 sumber.",
-      "Ukuran file maksimal 10 MB.",
-    ],
-    attachment: { name: "Template-Laporan-Praktikum.pdf", sizeKB: 248 },
-    rubric: [
-      { label: "Kelengkapan isi", max: 30 },
-      { label: "Analisis & pembahasan", max: 30 },
-      { label: "Kerapian & format", max: 20 },
-      { label: "Referensi", max: 20 },
-    ],
-  },
-  a3: {
-    description:
-      "Tulis esai kritis yang menganalisis tema, tokoh, dan amanat dari novel 'Laskar Pelangi' karya Andrea Hirata. Minimal 800 kata.",
-    instructions: [
-      "Tulis esai dalam Bahasa Indonesia yang baik dan benar.",
-      "Strukturkan: pendahuluan, isi (analisis tema/tokoh/amanat), penutup.",
-      "Sertakan minimal 3 kutipan langsung dari novel sebagai bukti analisis.",
-      "Boleh tulis langsung di sini atau lampirkan file (PDF/DOC).",
-    ],
-    minWords: 800,
-    rubric: [
-      { label: "Kedalaman analisis", max: 35 },
-      { label: "Struktur & koherensi", max: 25 },
-      { label: "Penggunaan bukti", max: 20 },
-      { label: "Tata bahasa & ejaan", max: 20 },
-    ],
-  },
-  a4: {
-    description:
-      "Kerjakan 15 soal latihan tentang sistem reproduksi manusia (organ, hormon, dan proses).",
-    instructions: [
-      "Kerjakan secara mandiri.",
-      "Sertakan penjelasan singkat untuk soal essay.",
-    ],
-    rubric: [
-      { label: "Pilihan ganda (10 soal × 5)", max: 50, earned: 45 },
-      { label: "Essay singkat (5 soal × 10)", max: 50, earned: 45 },
-    ],
-    submission: {
-      kind: "file",
-      fileName: "tugas-biologi-rizky.pdf",
-      fileSizeKB: 1240,
-      note: "Mohon koreksi soal essay no. 3 ya bu, saya ragu antara dua hormon.",
-      submittedAt: "2 hari lalu",
-    },
-    feedback:
-      "Kerja bagus! Pemahaman organ reproduksi sudah kuat. Untuk hormon pada siklus menstruasi masih ada sedikit kebingungan, coba review ulang materi LH dan FSH ya.",
-    feedbackFrom: "Bu Wati Rahayu",
-  },
-  a5: {
-    description:
-      "Buat laporan praktikum titrasi asam-basa yang sudah dilakukan di Lab Kimia.",
-    instructions: [
-      "Sertakan: tujuan, hipotesis, data titrasi, perhitungan molaritas, kesimpulan.",
-      "Tabel data minimal 3 kali pengulangan.",
-    ],
-    rubric: [
-      { label: "Data & perhitungan", max: 40, earned: 35 },
-      { label: "Pembahasan", max: 30, earned: 25 },
-      { label: "Kerapian & dokumentasi", max: 30, earned: 25 },
-    ],
-    submission: {
-      kind: "file",
-      fileName: "laporan-titrasi-rizky.pdf",
-      fileSizeKB: 2150,
-      submittedAt: "5 hari lalu",
-    },
-    feedback:
-      "Laporan rapi dan perhitungan benar. Bagian pembahasan masih bisa diperdalam, kaitkan dengan teori indikator pH.",
-    feedbackFrom: "Bu Rina Susanti",
-  },
-};
+import type { AssignmentDetail } from "@/lib/services/assignments";
 
 function fmtKB(kb: number) {
   return kb >= 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${kb} KB`;
@@ -139,21 +32,36 @@ function wordCount(s: string) {
 export default function TugasDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const assignment = mockAssignments.find((a) => a.id === params.id);
-  const detail = assignment ? DETAILS[assignment.id] : undefined;
+
+  const [assignment, setAssignment] = useState<AssignmentDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [submitMode, setSubmitMode] = useState<"file" | "text">(
-    assignment?.type === "Esai" ? "text" : "file",
-  );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [essayText, setEssayText] = useState("");
   const [note, setNote] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [justSubmitted, setJustSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [justSubmittedAt, setJustSubmittedAt] = useState<string | null>(null);
 
-  if (!assignment) {
+  useEffect(() => {
+    getAssignment(params.id)
+      .then(setAssignment)
+      .catch(() => setNotFound(true))
+      .finally(() => setLoading(false));
+  }, [params.id]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-40 text-[13px] text-ink-muted">
+        Memuat...
+      </div>
+    );
+  }
+
+  if (notFound || !assignment) {
     return (
       <div className="px-3.5 pt-10 text-center">
         <p className="text-[14px] text-ink-muted">Tugas tidak ditemukan.</p>
@@ -167,51 +75,63 @@ export default function TugasDetailPage() {
     );
   }
 
-  const c = subjectColorMap[assignment.subjectColor];
-  const SubjIcon = subjectIcons[assignment.subjectColor];
-  const due = dueUrgencyStyles[assignment.dueUrgency];
-  const isSubmitted = assignment.status === "selesai" || justSubmitted;
+  const c = subjectColorMap[assignment.subject.color];
+  const SubjIcon = subjectIcons[assignment.subject.color];
+  const urgency = getDueUrgency(assignment.dueAt, assignment.status);
+  const due = dueUrgencyStyles[urgency];
+  const dueLabel = getDueLabel(assignment.dueAt, assignment.status);
 
-  const submission = detail?.submission ?? (justSubmitted
-    ? submitMode === "file" && selectedFile
-      ? {
-          kind: "file" as const,
-          fileName: selectedFile.name,
-          fileSizeKB: Math.round(selectedFile.size / 1024),
-          note: note || undefined,
-          submittedAt: "Baru saja",
-        }
-      : submitMode === "text"
-      ? {
-          kind: "text" as const,
-          text: essayText,
-          note: note || undefined,
-          submittedAt: "Baru saja",
-        }
-      : undefined
-    : undefined);
+  const isSubmitted = assignment.status === "selesai" || !!justSubmittedAt;
+  const submission = justSubmittedAt ? null : assignment.submission;
+  const submittedAt = justSubmittedAt ?? assignment.submission?.submittedAt ?? null;
 
-  const totalRubric = detail?.rubric.reduce((s, r) => s + r.max, 0) ?? 100;
-  const earnedRubric = detail?.rubric.reduce((s, r) => s + (r.earned ?? 0), 0) ?? 0;
-  const showRubricTotal = (detail?.rubric ?? []).some((r) => r.earned !== undefined);
+  const isEssay = assignment.type === "ESSAY";
+  const isFile = assignment.type === "UPLOAD_FILE";
+  const isOnline = assignment.type === "ONLINE";
+
+  const totalRubric = assignment.rubric.reduce((s, r) => s + r.max, 0);
 
   const words = wordCount(essayText);
-  const wordsOK = detail?.minWords ? words >= detail.minWords : true;
-  const canSubmit = submitMode === "file" ? !!selectedFile : essayText.trim().length > 0 && wordsOK;
-
-  const onPickFile = () => fileInputRef.current?.click();
-  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (f) setSelectedFile(f);
-  };
+  const wordsOK = assignment.minWords ? words >= assignment.minWords : true;
+  const canSubmit = isEssay
+    ? essayText.trim().length > 0 && wordsOK
+    : isFile
+    ? !!selectedFile
+    : false;
 
   const handleSubmit = async () => {
     setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 700));
-    setSubmitting(false);
-    setShowConfirm(false);
-    setJustSubmitted(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setSubmitError(null);
+    try {
+      if (isFile && selectedFile) {
+        const { uploadUrl, fileKey } = await presignUpload(
+          "assignment_submission",
+          selectedFile.name,
+          selectedFile.size,
+          selectedFile.type,
+        );
+        await uploadFile(uploadUrl, selectedFile);
+        await submitAssignment(params.id, {
+          fileUrl: fileKey,
+          fileName: selectedFile.name,
+          fileSize: selectedFile.size,
+          note: note || undefined,
+        });
+      } else if (isEssay) {
+        await submitAssignment(params.id, {
+          essayText,
+          note: note || undefined,
+        });
+      }
+      setShowConfirm(false);
+      setJustSubmittedAt(new Date().toISOString());
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (err) {
+      const msg = isApiError(err) ? err.message : "Gagal mengumpulkan tugas, coba lagi.";
+      setSubmitError(msg);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -226,11 +146,12 @@ export default function TugasDetailPage() {
         </button>
         <div className="flex-1 min-w-0">
           <h3 className="text-[14px] font-extrabold text-ink truncate">Detail Tugas</h3>
-          <p className="text-[11px] text-ink-muted truncate">{assignment.subject} • {assignment.teacher}</p>
+          <p className="text-[11px] text-ink-muted truncate">{assignment.subject.name} • {assignment.teacher.name}</p>
         </div>
       </header>
 
       <div className={cn("px-3.5 pt-3.5 flex flex-col gap-3", isSubmitted ? "pb-8" : "pb-40")}>
+        {/* Header card */}
         <div className="card p-4">
           <div className="flex gap-3 items-start mb-3">
             <div
@@ -242,20 +163,19 @@ export default function TugasDetailPage() {
             <div className="flex-1 min-w-0">
               <h2 className="text-[15px] font-extrabold text-ink leading-snug">{assignment.title}</h2>
               <div className="flex flex-wrap gap-1.5 mt-2">
-                <Chip variant={assignment.subjectColor}>{assignment.subject}</Chip>
+                <Chip variant={assignment.subject.color}>{assignment.subject.name}</Chip>
                 <Chip variant="teal">{assignment.type}</Chip>
                 <span
                   className="chip text-[10px] font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-1"
                   style={{ background: due.bg, color: due.color }}
                 >
-                  <CalendarClock size={10} /> {assignment.dueLabel}
+                  <CalendarClock size={10} /> {dueLabel}
                 </span>
               </div>
             </div>
           </div>
-
           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 pt-3 border-t border-surface-soft text-[11px] text-ink-muted">
-            <span className="flex items-center gap-1"><GraduationCap size={12} /> {assignment.teacher}</span>
+            <span className="flex items-center gap-1"><GraduationCap size={12} /> {assignment.teacher.name}</span>
             <span className="text-border">|</span>
             <span className="flex items-center gap-1"><Star size={11} /> Max {assignment.maxScore}</span>
             {assignment.totalItems && (
@@ -267,7 +187,8 @@ export default function TugasDetailPage() {
           </div>
         </div>
 
-        {isSubmitted && assignment.score !== undefined && (
+        {/* Score */}
+        {isSubmitted && submission?.score !== null && submission?.score !== undefined && (
           <div
             className="rounded-card p-4 text-white"
             style={{ background: "linear-gradient(135deg,#3DD6B5 0%,#5FE0A0 100%)" }}
@@ -277,16 +198,19 @@ export default function TugasDetailPage() {
               <span className="text-[11px] font-extrabold uppercase tracking-wide">Sudah Dinilai</span>
             </div>
             <div className="flex items-baseline gap-1">
-              <span className="text-[40px] font-extrabold leading-none">{assignment.score}</span>
+              <span className="text-[40px] font-extrabold leading-none">{submission.score}</span>
               <span className="text-[14px] font-bold text-white/85">/ {assignment.maxScore}</span>
             </div>
-            <p className="text-[11px] text-white/85 mt-1">
-              Dikumpulkan {submission?.submittedAt ?? "—"}
-            </p>
+            {submittedAt && (
+              <p className="text-[11px] text-white/85 mt-1">
+                Dikumpulkan {new Date(submittedAt).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
+              </p>
+            )}
           </div>
         )}
 
-        {isSubmitted && assignment.score === undefined && (
+        {/* Waiting for grade */}
+        {isSubmitted && (!submission?.score) && (
           <div className="rounded-card p-4 flex gap-2.5 items-center bg-yellow-light">
             <div className="w-9 h-9 rounded-[10px] bg-white flex items-center justify-center flex-shrink-0">
               <FileCheck2 size={18} className="text-yellow-dark" />
@@ -294,28 +218,30 @@ export default function TugasDetailPage() {
             <div className="flex-1 min-w-0">
               <div className="text-[13px] font-extrabold text-yellow-dark">Menunggu penilaian</div>
               <div className="text-[11px] text-yellow-dark/80 mt-0.5">
-                Sudah dikumpulkan {submission?.submittedAt ?? "baru saja"}. Nilai akan keluar setelah dikoreksi guru.
+                Sudah dikumpulkan. Nilai akan keluar setelah dikoreksi guru.
               </div>
             </div>
           </div>
         )}
 
-        {detail?.description && (
+        {/* Description */}
+        {assignment.description && (
           <div className="card p-4">
             <h3 className="text-[13px] font-extrabold text-ink mb-2 flex items-center gap-1.5">
               <FileText size={14} className="text-brand-blue" /> Deskripsi
             </h3>
-            <p className="text-[12px] text-ink-secondary leading-relaxed">{detail.description}</p>
+            <p className="text-[12px] text-ink-secondary leading-relaxed">{assignment.description}</p>
           </div>
         )}
 
-        {detail && detail.instructions.length > 0 && (
+        {/* Instructions */}
+        {assignment.instructions.length > 0 && (
           <div className="card p-4">
             <h3 className="text-[13px] font-extrabold text-ink mb-2 flex items-center gap-1.5">
               <ListChecks size={14} className="text-brand-blue" /> Petunjuk
             </h3>
             <ul className="flex flex-col gap-1.5">
-              {detail.instructions.map((inst, i) => (
+              {assignment.instructions.map((inst, i) => (
                 <li key={i} className="text-[12px] text-ink-secondary leading-relaxed flex gap-2">
                   <span className="w-4 h-4 rounded-full bg-blue-light text-blue-dark text-[10px] font-extrabold flex items-center justify-center flex-shrink-0 mt-0.5">
                     {i + 1}
@@ -327,60 +253,58 @@ export default function TugasDetailPage() {
           </div>
         )}
 
-        {detail?.attachment && (
+        {/* Attachment */}
+        {assignment.attachment && (
           <div className="card p-4">
             <h3 className="text-[13px] font-extrabold text-ink mb-2 flex items-center gap-1.5">
               <Paperclip size={14} className="text-brand-blue" /> Lampiran dari guru
             </h3>
-            <button className="w-full flex gap-3 items-center px-3 py-2.5 rounded-[10px] bg-surface-soft hover:bg-blue-light transition-colors text-left cursor-pointer">
+            <a
+              href={assignment.attachment.url}
+              target="_blank"
+              rel="noreferrer"
+              className="w-full flex gap-3 items-center px-3 py-2.5 rounded-[10px] bg-surface-soft hover:bg-blue-light transition-colors text-left"
+            >
               <div className="w-9 h-9 rounded-[8px] bg-red-light flex items-center justify-center flex-shrink-0">
                 <FileText size={16} className="text-red-dark" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-[12px] font-bold text-ink truncate">{detail.attachment.name}</div>
-                <div className="text-[10px] text-ink-muted">{fmtKB(detail.attachment.sizeKB)}</div>
+                <div className="text-[12px] font-bold text-ink truncate">{assignment.attachment.name}</div>
+                <div className="text-[10px] text-ink-muted">{fmtKB(assignment.attachment.sizeKB)}</div>
               </div>
               <Download size={16} className="text-brand-blue flex-shrink-0" />
-            </button>
+            </a>
           </div>
         )}
 
-        {detail && detail.rubric.length > 0 && (
+        {/* Rubric */}
+        {assignment.rubric.length > 0 && (
           <div className="card p-4">
             <h3 className="text-[13px] font-extrabold text-ink mb-2.5 flex items-center gap-1.5">
               <Star size={14} className="text-brand-yellow fill-brand-yellow" /> Kriteria Penilaian
             </h3>
             <div className="flex flex-col gap-2">
-              {detail.rubric.map((r, i) => (
-                <div key={i}>
-                  <div className="flex justify-between text-[11px] mb-1">
-                    <span className="font-semibold text-ink">{r.label}</span>
-                    <span className="font-extrabold tabular-nums text-ink">
-                      {r.earned !== undefined ? `${r.earned}/${r.max}` : `${r.max}`}
-                    </span>
-                  </div>
-                  {r.earned !== undefined && (
-                    <ProgressBar value={(r.earned / r.max) * 100} height="sm" color={c.bar} />
-                  )}
+              {assignment.rubric.map((r, i) => (
+                <div key={i} className="flex justify-between text-[11px]">
+                  <span className="font-semibold text-ink">{r.label}</span>
+                  <span className="font-extrabold tabular-nums text-ink">{r.max} poin</span>
                 </div>
               ))}
-              {showRubricTotal && (
-                <div className="flex justify-between text-[12px] font-extrabold text-brand-blue pt-2 border-t border-surface-soft mt-1">
-                  <span>Total</span>
-                  <span className="tabular-nums">{earnedRubric}/{totalRubric}</span>
-                </div>
-              )}
+              <div className="flex justify-between text-[12px] font-extrabold text-brand-blue pt-2 border-t border-surface-soft mt-1">
+                <span>Total</span>
+                <span className="tabular-nums">{totalRubric} poin</span>
+              </div>
             </div>
           </div>
         )}
 
+        {/* Submitted content */}
         {isSubmitted && submission && (
           <div className="card p-4">
             <h3 className="text-[13px] font-extrabold text-ink mb-2.5 flex items-center gap-1.5">
               <FileCheck2 size={14} className="text-brand-teal" /> Yang kamu kumpulkan
             </h3>
-
-            {submission.kind === "file" ? (
+            {submission.kind === "FILE" && submission.fileName ? (
               <div className="flex gap-3 items-center px-3 py-2.5 rounded-[10px] bg-teal-light mb-2.5">
                 <div className="w-9 h-9 rounded-[8px] bg-white flex items-center justify-center flex-shrink-0">
                   <FileText size={16} className="text-teal-dark" />
@@ -388,25 +312,24 @@ export default function TugasDetailPage() {
                 <div className="flex-1 min-w-0">
                   <div className="text-[12px] font-bold text-ink truncate">{submission.fileName}</div>
                   <div className="text-[10px] text-ink-muted">
-                    {submission.fileSizeKB !== undefined && `${fmtKB(submission.fileSizeKB)} • `}
-                    {submission.submittedAt}
+                    {submission.fileSizeKB !== null && `${fmtKB(submission.fileSizeKB)} • `}
+                    {new Date(submission.submittedAt).toLocaleDateString("id-ID")}
                   </div>
                 </div>
               </div>
-            ) : (
+            ) : submission.kind === "ESSAY" && submission.essayText ? (
               <div className="bg-teal-light rounded-[10px] p-3 mb-2.5">
                 <div className="flex items-center justify-between text-[10px] mb-1.5">
                   <span className="font-extrabold text-teal-dark uppercase">Esai</span>
                   <span className="text-ink-muted">
-                    {submission.text ? wordCount(submission.text) : 0} kata • {submission.submittedAt}
+                    {wordCount(submission.essayText)} kata • {new Date(submission.submittedAt).toLocaleDateString("id-ID")}
                   </span>
                 </div>
                 <p className="text-[12px] text-ink-secondary leading-relaxed whitespace-pre-wrap">
-                  {submission.text}
+                  {submission.essayText}
                 </p>
               </div>
-            )}
-
+            ) : null}
             {submission.note && (
               <div className="text-[11px] text-ink-secondary leading-relaxed bg-surface-soft rounded-[10px] p-2.5">
                 <div className="text-[10px] font-extrabold text-ink-muted uppercase mb-0.5">Catatan kamu</div>
@@ -416,58 +339,39 @@ export default function TugasDetailPage() {
           </div>
         )}
 
-        {isSubmitted && detail?.feedback && (
+        {/* Feedback */}
+        {isSubmitted && submission?.feedback && (
           <div className="card p-4">
             <h3 className="text-[13px] font-extrabold text-ink mb-2 flex items-center gap-1.5">
               <MessageSquareText size={14} className="text-brand-blue" /> Feedback Guru
             </h3>
             <div className="bg-blue-light rounded-[10px] p-3">
-              <p className="text-[12px] text-ink-secondary leading-relaxed">{detail.feedback}</p>
-              {detail.feedbackFrom && (
+              <p className="text-[12px] text-ink-secondary leading-relaxed">{submission.feedback}</p>
+              {submission.feedbackFrom && (
                 <div className="text-[10px] text-blue-dark font-bold mt-2 flex items-center gap-1">
-                  <GraduationCap size={11} /> {detail.feedbackFrom}
+                  <GraduationCap size={11} /> {submission.feedbackFrom}
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {!isSubmitted && (
+        {/* Submit form */}
+        {!isSubmitted && !isOnline && (
           <div className="card p-4">
             <h3 className="text-[13px] font-extrabold text-ink mb-3 flex items-center gap-1.5">
               <Upload size={14} className="text-brand-blue" /> Kumpulkan Tugas
             </h3>
 
-            <div className="flex gap-2 mb-3 p-1 bg-surface-soft rounded-[10px]">
-              {([
-                { mode: "file" as const, label: "File", Icon: Upload },
-                { mode: "text" as const, label: "Tulis Esai", Icon: FileText },
-              ]).map(({ mode, label, Icon }) => (
-                <button
-                  key={mode}
-                  onClick={() => setSubmitMode(mode)}
-                  className={cn(
-                    "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-[8px] text-[12px] font-extrabold transition-all cursor-pointer",
-                    submitMode === mode
-                      ? "bg-surface-card text-brand-blue shadow-sm"
-                      : "text-ink-muted hover:text-ink",
-                  )}
-                >
-                  <Icon size={13} />
-                  {label}
-                </button>
-              ))}
-            </div>
-
             <input
               ref={fileInputRef}
               type="file"
-              onChange={onFileChange}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) setSelectedFile(f); }}
               className="hidden"
               accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
             />
 
-            {submitMode === "file" ? (
+            {isFile && (
               selectedFile ? (
                 <div className="flex gap-3 items-center px-3 py-2.5 rounded-[10px] bg-blue-light">
                   <div className="w-9 h-9 rounded-[8px] bg-white flex items-center justify-center flex-shrink-0">
@@ -478,19 +382,15 @@ export default function TugasDetailPage() {
                     <div className="text-[10px] text-ink-muted">{fmtBytes(selectedFile.size)}</div>
                   </div>
                   <button
-                    onClick={() => {
-                      setSelectedFile(null);
-                      if (fileInputRef.current) fileInputRef.current.value = "";
-                    }}
+                    onClick={() => { setSelectedFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
                     className="w-7 h-7 rounded-full bg-white flex items-center justify-center text-ink-muted hover:text-red-dark transition-colors cursor-pointer"
-                    aria-label="Hapus file"
                   >
                     <X size={14} />
                   </button>
                 </div>
               ) : (
                 <button
-                  onClick={onPickFile}
+                  onClick={() => fileInputRef.current?.click()}
                   className="w-full flex flex-col items-center gap-1.5 py-6 rounded-[12px] border-2 border-dashed border-border bg-surface-soft hover:border-brand-blue hover:bg-blue-light transition-colors cursor-pointer"
                 >
                   <Upload size={20} className="text-brand-blue" />
@@ -498,7 +398,9 @@ export default function TugasDetailPage() {
                   <span className="text-[10px] text-ink-muted">PDF, DOC, atau gambar — maks 10 MB</span>
                 </button>
               )
-            ) : (
+            )}
+
+            {isEssay && (
               <div>
                 <textarea
                   value={essayText}
@@ -509,11 +411,9 @@ export default function TugasDetailPage() {
                 />
                 <div className="flex justify-between text-[10px] mt-1 tabular-nums">
                   <span className={cn(wordsOK ? "text-ink-muted" : "text-red-dark font-bold")}>
-                    {detail?.minWords ? `Min ${detail.minWords} kata` : ""}
+                    {assignment.minWords ? `Min ${assignment.minWords} kata` : ""}
                   </span>
-                  <span className={cn(wordsOK ? "text-ink-muted" : "text-red-dark font-bold")}>
-                    {words} kata
-                  </span>
+                  <span className={cn(wordsOK ? "text-ink-muted" : "text-red-dark font-bold")}>{words} kata</span>
                 </div>
               </div>
             )}
@@ -530,13 +430,22 @@ export default function TugasDetailPage() {
             </label>
           </div>
         )}
+
+        {!isSubmitted && isOnline && (
+          <div className="card p-4 text-center">
+            <p className="text-[12px] text-ink-muted">Tugas ini dikerjakan melalui sistem online di platform quiz.</p>
+          </div>
+        )}
       </div>
 
-      {!isSubmitted && (
+      {!isSubmitted && !isOnline && (
         <div
           className="fixed left-0 right-0 z-10 bg-surface-card border-t border-border px-3.5 py-3"
           style={{ bottom: "calc(64px + env(safe-area-inset-bottom))" }}
         >
+          {submitError && (
+            <p className="text-[11px] text-red-dark font-bold mb-2 text-center">{submitError}</p>
+          )}
           <button
             onClick={() => setShowConfirm(true)}
             disabled={!canSubmit}
@@ -544,10 +453,10 @@ export default function TugasDetailPage() {
           >
             {canSubmit
               ? "Kumpulkan Tugas"
-              : submitMode === "file"
+              : isFile
               ? "Pilih file dulu"
-              : detail?.minWords && words < detail.minWords
-              ? `Min ${detail.minWords} kata`
+              : assignment.minWords && words < assignment.minWords
+              ? `Min ${assignment.minWords} kata`
               : "Isi esai dulu"}
           </button>
         </div>
@@ -568,9 +477,7 @@ export default function TugasDetailPage() {
                 <AlertCircle size={24} className="text-yellow-dark" />
               </div>
             </div>
-            <h3 className="text-[15px] font-extrabold text-ink text-center mb-1">
-              Kumpulkan sekarang?
-            </h3>
+            <h3 className="text-[15px] font-extrabold text-ink text-center mb-1">Kumpulkan sekarang?</h3>
             <p className="text-[12px] text-ink-muted text-center mb-4">
               Setelah dikumpulkan kamu tidak bisa mengubah jawaban tanpa izin guru.
             </p>
@@ -585,8 +492,9 @@ export default function TugasDetailPage() {
               <button
                 onClick={handleSubmit}
                 disabled={submitting}
-                className="flex-1 py-2.5 rounded-[12px] bg-brand-blue text-white text-[12px] font-extrabold disabled:opacity-60 cursor-pointer"
+                className="flex-1 py-2.5 rounded-[12px] bg-brand-blue text-white text-[12px] font-extrabold disabled:opacity-60 cursor-pointer flex items-center justify-center gap-1.5"
               >
+                {submitting && <Loader2 size={14} className="animate-spin" />}
                 {submitting ? "Mengirim..." : "Ya, Kumpulkan"}
               </button>
             </div>

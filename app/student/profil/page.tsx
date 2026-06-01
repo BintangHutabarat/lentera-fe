@@ -1,19 +1,62 @@
-import { UserCog, Bell, Lock, HelpCircle, LogOut } from "lucide-react";
+"use client";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { UserCog, Bell, Lock, HelpCircle, LogOut, Loader2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { mockStudent } from "@/lib/mock-data";
+import { getStudentProfile, getStudentStats, getStudentBadges } from "@/lib/services/student";
+import { logout } from "@/lib/services/auth";
 import { Avatar } from "@/components/ui/Avatar";
+import type { StudentProfile, StudentStats, Badge } from "@/lib/services/student";
 
-const MENU_ITEMS: { Icon: LucideIcon; bg: string; label: string; danger: boolean }[] = [
-  { Icon: UserCog,    bg: "#E6F6FD", label: "Edit Profil",   danger: false },
-  { Icon: Bell,       bg: "#FEF9E7", label: "Notifikasi",    danger: false },
-  { Icon: Lock,       bg: "#E3FBF5", label: "Keamanan Akun", danger: false },
-  { Icon: HelpCircle, bg: "#EAFBF2", label: "Bantuan & FAQ", danger: false },
-  { Icon: LogOut,     bg: "#FEF0EF", label: "Keluar",        danger: true  },
-];
+interface MenuItem {
+  Icon: LucideIcon;
+  bg: string;
+  label: string;
+  danger: boolean;
+  onClick?: () => void;
+}
 
 export default function ProfilPage() {
-  const s = mockStudent;
-  const initials = s.name.split(" ").slice(0, 2).map((n) => n[0]).join("");
+  const router = useRouter();
+  const [profile, setProfile] = useState<StudentProfile | null>(null);
+  const [stats, setStats] = useState<StudentStats | null>(null);
+  const [badges, setBadges] = useState<Badge[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  useEffect(() => {
+    Promise.all([getStudentProfile(), getStudentStats(), getStudentBadges()])
+      .then(([p, s, b]) => {
+        setProfile(p);
+        setStats(s);
+        setBadges(b);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    await logout();
+    router.push("/auth/login/siswa");
+  };
+
+  const MENU_ITEMS: MenuItem[] = [
+    { Icon: UserCog,    bg: "#E6F6FD", label: "Edit Profil",   danger: false },
+    { Icon: Bell,       bg: "#FEF9E7", label: "Notifikasi",    danger: false },
+    { Icon: Lock,       bg: "#E3FBF5", label: "Keamanan Akun", danger: false },
+    { Icon: HelpCircle, bg: "#EAFBF2", label: "Bantuan & FAQ", danger: false },
+    { Icon: LogOut,     bg: "#FEF0EF", label: "Keluar",        danger: true, onClick: handleLogout },
+  ];
+
+  if (loading || !profile || !stats) {
+    return (
+      <div className="flex items-center justify-center h-40 text-[13px] text-ink-muted">
+        Memuat...
+      </div>
+    );
+  }
+
+  const initials = profile.name.split(" ").slice(0, 2).map((n) => n[0]).join("");
 
   return (
     <>
@@ -30,18 +73,18 @@ export default function ProfilPage() {
           size="lg"
           className="border-[3px] border-white/40 mx-auto mb-2.5"
         />
-        <div className="text-[18px] font-extrabold text-white">{s.name}</div>
-        <div className="text-[12px] text-white/80 mt-1">{s.class} • {s.school}</div>
+        <div className="text-[18px] font-extrabold text-white">{profile.name}</div>
+        <div className="text-[12px] text-white/80 mt-1">{profile.class.name} • {profile.school.name}</div>
       </div>
 
       <div className="px-3.5">
-        {/* Float card */}
+        {/* Stats float card */}
         <div className="card -mt-7 relative z-10 mb-3.5">
           <div className="grid grid-cols-3 text-center divide-x divide-border">
             {[
-              { val: s.level,               color: "#2B9FD8", label: "Level" },
-              { val: s.xp.toLocaleString(), color: "#7a5c00", label: "Total XP" },
-              { val: `${s.attendance}%`,    color: "#3DD6B5", label: "Kehadiran" },
+              { val: profile.level,               color: "#2B9FD8", label: "Level" },
+              { val: profile.xp.toLocaleString(), color: "#7a5c00", label: "Total XP" },
+              { val: `${stats.attendance}%`,       color: "#3DD6B5", label: "Kehadiran" },
             ].map((item) => (
               <div key={item.label} className="py-3">
                 <div className="text-[19px] font-extrabold" style={{ color: item.color }}>{item.val}</div>
@@ -55,7 +98,7 @@ export default function ProfilPage() {
         <h3 className="text-[14px] font-extrabold text-ink mb-2.5">Lencana Saya</h3>
         <div className="card p-4 mb-3.5">
           <div className="flex gap-1.5 flex-wrap">
-            {s.badges.map((b) => (
+            {badges.map((b) => (
               <span
                 key={b.id}
                 className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold ${
@@ -73,27 +116,29 @@ export default function ProfilPage() {
         {/* Menu */}
         <h3 className="text-[14px] font-extrabold text-ink mb-2.5">Pengaturan Akun</h3>
         <div className="card mb-3.5">
-          {MENU_ITEMS.map(({ Icon, bg, label, danger }, i) => (
+          {MENU_ITEMS.map(({ Icon, bg, label, danger, onClick }, i) => (
             <button
               key={label}
+              onClick={onClick}
+              disabled={loggingOut && danger}
               className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-surface-soft transition-colors cursor-pointer ${
                 i < MENU_ITEMS.length - 1 ? "border-b border-surface-soft" : ""
-              }`}
+              } disabled:opacity-60`}
             >
               <div
                 className="w-[34px] h-[34px] rounded-[9px] flex items-center justify-center flex-shrink-0"
                 style={{ background: bg }}
               >
-                <Icon
-                  size={17}
-                  style={{ color: danger ? "#b83232" : "#1C3B4A" }}
-                  strokeWidth={1.8}
-                />
+                {loggingOut && danger ? (
+                  <Loader2 size={17} style={{ color: "#b83232" }} className="animate-spin" />
+                ) : (
+                  <Icon size={17} style={{ color: danger ? "#b83232" : "#1C3B4A" }} strokeWidth={1.8} />
+                )}
               </div>
               <div className={`flex-1 text-[13px] font-semibold ${danger ? "text-red-dark" : "text-ink"}`}>
                 {label}
               </div>
-              <div className="text-ink-muted text-sm">›</div>
+              {!danger && <div className="text-ink-muted text-sm">›</div>}
             </button>
           ))}
         </div>

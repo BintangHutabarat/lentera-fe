@@ -4,6 +4,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, ShieldCheck, Mail, Lock, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { loginStaff } from "@/lib/services/auth";
+import { isApiError } from "@/lib/api";
+
+const ERROR_MESSAGES: Record<string, string> = {
+  INVALID_CREDENTIALS: "Email atau password salah.",
+  ACCOUNT_DISABLED: "Akun kamu dinonaktifkan. Hubungi admin sekolah.",
+};
 
 export default function LoginStaffPage() {
   const router = useRouter();
@@ -21,10 +28,20 @@ export default function LoginStaffPage() {
     if (!canSubmit) return;
     setError(null);
     setSubmitting(true);
-    // Placeholder: BE belum siap. Modul guru/admin juga belum ada,
-    // sementara redirect ke dashboard siswa supaya flow ke-test.
-    await new Promise((r) => setTimeout(r, 600));
-    router.push("/student/beranda");
+    try {
+      const { user } = await loginStaff(email.trim(), password);
+      if (user.mustChangePassword) {
+        router.push("/auth/change-password");
+      } else {
+        router.push("/student/beranda");
+      }
+    } catch (err) {
+      const msg = isApiError(err)
+        ? (ERROR_MESSAGES[err.code] ?? err.message)
+        : "Terjadi kesalahan, coba lagi.";
+      setError(msg);
+      setSubmitting(false);
+    }
   };
 
   return (
