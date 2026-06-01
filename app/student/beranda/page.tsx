@@ -112,10 +112,10 @@ export default function BerandaPage() {
             </div>
             <span className="text-[18px] font-extrabold text-white tracking-tight">Lentera</span>
           </div>
-          <button className="relative w-[34px] h-[34px] bg-white/18 rounded-[9px] flex items-center justify-center cursor-pointer">
+          <Link href="/student/notifikasi" className="relative w-[34px] h-[34px] bg-white/18 rounded-[9px] flex items-center justify-center cursor-pointer">
             <Bell size={16} className="text-white" />
             <span className="absolute top-1.5 right-[7px] w-[7px] h-[7px] bg-brand-yellow rounded-full border-[1.5px] border-white/50" />
-          </button>
+          </Link>
         </div>
 
         <div className="relative flex items-center justify-between">

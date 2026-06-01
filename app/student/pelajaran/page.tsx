@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { getSubjects } from "@/lib/services/subjects";
 import { PageTopbar } from "@/components/layout/PageTopbar";
 import { ProgressBar } from "@/components/ui/ProgressBar";
@@ -32,8 +33,9 @@ export default function PelajaranPage() {
               const c = subjectColorMap[subj.color];
               const SubjIcon = subjectIcons[subj.color];
               return (
-                <div
+                <Link
                   key={subj.id}
+                  href={`/student/pelajaran/${subj.id}`}
                   className={`flex gap-3 items-center px-4 py-3 cursor-pointer hover:bg-surface-soft transition-colors active:bg-surface-soft ${
                     i < subjects.length - 1 ? "border-b border-surface-soft" : ""
                   }`}
@@ -54,7 +56,7 @@ export default function PelajaranPage() {
                     <div className="text-[13px] font-extrabold" style={{ color: c.bar }}>{subj.progress}%</div>
                     <ProgressBar value={subj.progress} height="sm" color={c.bar} className="w-14 mt-1 ml-auto" />
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>
