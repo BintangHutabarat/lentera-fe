@@ -89,7 +89,18 @@ export default function ForumPage() {
 
   return (
     <>
-      <PageTopbar title="Forum Diskusi" subtitle="Diskusi bersama" />
+      <PageTopbar
+        title="Forum Diskusi"
+        subtitle="Diskusi bersama"
+        right={
+          <Link
+            href="/student/forum/tersimpan"
+            className="w-9 h-9 rounded-[10px] flex items-center justify-center text-ink-muted hover:bg-surface-soft transition-colors"
+          >
+            <Bookmark size={18} />
+          </Link>
+        }
+      />
       <div className="px-3.5 pt-3.5">
 
         {/* Compose bar */}

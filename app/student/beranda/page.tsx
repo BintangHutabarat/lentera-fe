@@ -269,7 +269,10 @@ export default function BerandaPage() {
 
         <div className="grid grid-cols-2 gap-3 mb-3.5">
           <div>
-            <h3 className="text-[14px] font-extrabold text-ink mb-2.5">Jadwal Hari Ini</h3>
+            <div className="flex items-center justify-between mb-2.5">
+              <h3 className="text-[14px] font-extrabold text-ink">Jadwal Hari Ini</h3>
+              <Link href="/student/jadwal" className="text-[12px] font-semibold text-brand-blue">Minggu ini →</Link>
+            </div>
             <div className="card p-4">
               {schedule.length === 0 ? (
                 <div className="text-[11px] text-ink-muted text-center py-2">Tidak ada jadwal hari ini</div>

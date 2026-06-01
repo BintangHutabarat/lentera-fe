@@ -21,9 +21,22 @@ function Stars({ count }: { count: number }) {
 export default function QuizPage() {
   const [quizzes, setQuizzes] = useState<QuizListItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [savedSessions, setSavedSessions] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    getQuizzes().then(setQuizzes).catch(() => {}).finally(() => setLoading(false));
+    getQuizzes()
+      .then((data) => {
+        setQuizzes(data);
+        const sessions: Record<string, boolean> = {};
+        data.forEach((q) => {
+          if (q.completed && localStorage.getItem(`quiz_session_${q.id}`)) {
+            sessions[q.id] = true;
+          }
+        });
+        setSavedSessions(sessions);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
   const pending   = quizzes.filter((q) => !q.completed);
@@ -104,6 +117,7 @@ export default function QuizPage() {
               {completed.map((q) => {
                 const c = subjectColorMap[q.subject.color];
                 const SubjIcon = subjectIcons[q.subject.color];
+                const hasResult = !!savedSessions[q.id];
                 return (
                   <div key={q.id} className="card p-3.5 flex gap-3 items-center">
                     <div
@@ -119,7 +133,15 @@ export default function QuizPage() {
                     </div>
                     <div className="text-right flex-shrink-0">
                       <div className="text-[18px] font-extrabold" style={{ color: c.bar }}>{q.lastScore}</div>
-                      <div className="text-[10px] text-ink-muted">Nilai kamu</div>
+                      <div className="text-[10px] text-ink-muted mb-1">Nilai kamu</div>
+                      {hasResult && (
+                        <Link
+                          href={`/student/quiz/${q.id}/hasil`}
+                          className="text-[10px] font-bold text-brand-blue hover:underline"
+                        >
+                          Review →
+                        </Link>
+                      )}
                     </div>
                   </div>
                 );

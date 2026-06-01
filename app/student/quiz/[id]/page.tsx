@@ -81,6 +81,7 @@ export default function QuizDetailPage() {
     setShowPalette(false);
     try {
       const res = await submitQuiz(session.sessionId, answers);
+      localStorage.setItem(`quiz_session_${params.id}`, session.sessionId);
       setResult(res);
       setView("result");
     } catch {
