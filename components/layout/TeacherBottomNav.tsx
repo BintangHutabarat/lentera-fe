@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, ClipboardList, MessageCircle, User, BookOpen } from "lucide-react";
+import { Home, ClipboardList, Brain, User, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 
@@ -9,7 +9,7 @@ const NAV_ITEMS: { href: string; label: string; Icon: LucideIcon }[] = [
   { href: "/teacher/beranda", label: "Beranda",  Icon: Home },
   { href: "/teacher/kelas",   label: "Kelas",    Icon: BookOpen },
   { href: "/teacher/tugas",   label: "Tugas",    Icon: ClipboardList },
-  { href: "/teacher/forum",   label: "Forum",    Icon: MessageCircle },
+  { href: "/teacher/quiz",    label: "Quiz",     Icon: Brain },
   { href: "/teacher/profil",  label: "Profil",   Icon: User },
 ];
 

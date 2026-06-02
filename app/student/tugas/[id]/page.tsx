@@ -77,11 +77,12 @@ export default function TugasDetailPage() {
 
   const c = subjectColorMap[assignment.subject.color];
   const SubjIcon = subjectIcons[assignment.subject.color];
-  const urgency = getDueUrgency(assignment.dueAt, assignment.status);
+  const derivedStatus = assignment.submission ? "selesai" : "belum";
+  const urgency = getDueUrgency(assignment.dueAt, derivedStatus);
   const due = dueUrgencyStyles[urgency];
-  const dueLabel = getDueLabel(assignment.dueAt, assignment.status);
+  const dueLabel = getDueLabel(assignment.dueAt, derivedStatus);
 
-  const isSubmitted = assignment.status === "selesai" || !!justSubmittedAt;
+  const isSubmitted = derivedStatus === "selesai" || !!justSubmittedAt;
   const submission = justSubmittedAt ? null : assignment.submission;
   const submittedAt = justSubmittedAt ?? assignment.submission?.submittedAt ?? null;
 

@@ -1,4 +1,4 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export interface ApiError {
   statusCode: number;
@@ -88,7 +88,11 @@ export async function apiFetch<T>(
       return apiFetch<T>(path, init, { withAuth, _isRetry: true });
     }
     clearAccessToken();
-    if (typeof window !== "undefined") window.location.href = "/auth/login/siswa";
+    if (typeof window !== "undefined") {
+      const p = window.location.pathname;
+      const isStaff = p.startsWith("/teacher") || p.startsWith("/admin");
+      window.location.href = isStaff ? "/auth/login/staff" : "/auth/login/siswa";
+    }
     throw new ApiRequestError({ statusCode: 401, code: "UNAUTHORIZED", message: "Sesi kamu telah berakhir, silakan login kembali." });
   }
 

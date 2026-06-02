@@ -7,14 +7,15 @@ interface StatCardProps {
   valueColor: string;
   label: string;
   badge?: string;
-  badgeVariant?: "up" | "warn" | "danger";
+  badgeVariant?: "up" | "warn" | "danger" | "neutral";
   className?: string;
 }
 
 const badgeStyles = {
-  up:     "bg-teal-light   text-teal-dark",
-  warn:   "bg-yellow-light text-yellow-dark",
-  danger: "bg-red-light    text-red-dark",
+  up:      "bg-teal-light   text-teal-dark",
+  warn:    "bg-yellow-light text-yellow-dark",
+  danger:  "bg-red-light    text-red-dark",
+  neutral: "bg-surface-soft text-ink-muted",
 };
 
 export function StatCard({

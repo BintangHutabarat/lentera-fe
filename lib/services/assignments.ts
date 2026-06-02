@@ -46,6 +46,7 @@ export interface AssignmentDetail {
   description: string;
   instructions: string[];
   minWords: number | null;
+  totalItems?: string | null;
   attachment: { name: string; sizeKB: number; url: string } | null;
   rubric: { label: string; max: number }[];
   maxScore: number;
