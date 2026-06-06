@@ -293,3 +293,110 @@ export function updateScheduleSlot(id: string, payload: {
 export function deleteScheduleSlot(id: string): Promise<void> {
   return apiFetch<void>(`/admin/schedule/${id}`, { method: "DELETE" });
 }
+
+// ── Class Detail ──────────────────────────────────────────────────────────────
+
+export interface AdminClassDetail {
+  id: string;
+  name: string;
+  gradeYear: number;
+  students: {
+    id: string;
+    name: string;
+    nis: string;
+    email: string | null;
+    isActive: boolean;
+    level: number;
+    xp: number;
+  }[];
+  classSubjects: {
+    id: string;
+    subject: { id: string; name: string; shortName: string; color: string; iconKey: string };
+    teacher: { userId: string; name: string; title: string | null };
+    assignmentCount: number;
+    quizCount: number;
+  }[];
+}
+
+export function getAdminClassDetail(id: string): Promise<AdminClassDetail> {
+  return apiFetch<AdminClassDetail>(`/admin/classes/${id}`);
+}
+
+// ── Chapters ──────────────────────────────────────────────────────────────────
+
+export interface AdminChapter {
+  id: string;
+  order: number;
+  title: string;
+  hasContent: boolean;
+}
+
+export function getAdminChapters(subjectId: string): Promise<AdminChapter[]> {
+  return apiFetch<AdminChapter[]>(`/admin/subjects/${subjectId}/chapters`);
+}
+
+export function createChapter(
+  subjectId: string,
+  payload: { order: number; title: string; content?: string }
+): Promise<{ id: string; order: number; title: string }> {
+  return apiFetch<{ id: string; order: number; title: string }>(
+    `/admin/subjects/${subjectId}/chapters`,
+    { method: "POST", body: JSON.stringify(payload) }
+  );
+}
+
+export function updateChapter(
+  subjectId: string,
+  chapterId: string,
+  payload: { title?: string; content?: string }
+): Promise<void> {
+  return apiFetch<void>(`/admin/subjects/${subjectId}/chapters/${chapterId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteChapter(subjectId: string, chapterId: string): Promise<void> {
+  return apiFetch<void>(`/admin/subjects/${subjectId}/chapters/${chapterId}`, {
+    method: "DELETE",
+  });
+}
+
+// ── Admin Content Management (tugas & quiz per class-subject) ─────────────────
+
+export interface AdminAssignmentItem {
+  id: string;
+  title: string;
+  type: "ONLINE" | "UPLOAD_FILE" | "ESSAY";
+  dueAt: string;
+  maxScore: number;
+  submissionCount: number;
+  createdAt: string;
+}
+
+export function getAdminClassSubjectAssignments(classSubjectId: string): Promise<AdminAssignmentItem[]> {
+  return apiFetch<AdminAssignmentItem[]>(`/admin/class-subjects/${classSubjectId}/assignments`);
+}
+
+export function deleteAdminAssignment(id: string): Promise<void> {
+  return apiFetch<void>(`/admin/assignments/${id}`, { method: "DELETE" });
+}
+
+export interface AdminQuizItem {
+  id: string;
+  title: string;
+  chapter: string;
+  durationMinutes: number;
+  totalQuestions: number;
+  maxAttempts: number;
+  sessionCount: number;
+  createdAt: string;
+}
+
+export function getAdminClassSubjectQuizzes(classSubjectId: string): Promise<AdminQuizItem[]> {
+  return apiFetch<AdminQuizItem[]>(`/admin/class-subjects/${classSubjectId}/quizzes`);
+}
+
+export function deleteAdminQuiz(id: string): Promise<void> {
+  return apiFetch<void>(`/admin/quizzes/${id}`, { method: "DELETE" });
+}

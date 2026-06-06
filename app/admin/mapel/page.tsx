@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, BookMarked, Trash2 } from "lucide-react";
+import { Plus, BookMarked, Trash2, ChevronRight } from "lucide-react";
 import { PageTopbar } from "@/components/layout/PageTopbar";
 import { getAdminSubjects, deleteSubject } from "@/lib/services/admin";
 import { subjectColorMap } from "@/lib/utils";
@@ -75,15 +75,18 @@ export default function AdminMapelPage() {
                     i < subjects.length - 1 ? "border-b border-surface-soft" : ""
                   }`}
                 >
-                  <div className={`w-10 h-10 rounded-[10px] flex items-center justify-center flex-shrink-0 ${colors.bg}`}>
-                    <BookMarked size={18} className={colors.text} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[13px] font-extrabold text-ink">{sub.name}</div>
-                    <div className="text-[11px] text-ink-muted mt-0.5">
-                      {sub.shortName} · {sub.classCount} kelas · {sub.chapterCount} bab
+                  <Link href={`/admin/mapel/${sub.id}`} className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className={`w-10 h-10 rounded-[10px] flex items-center justify-center flex-shrink-0 ${colors.bg}`}>
+                      <BookMarked size={18} className={colors.text} />
                     </div>
-                  </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] font-extrabold text-ink">{sub.name}</div>
+                      <div className="text-[11px] text-ink-muted mt-0.5">
+                        {sub.shortName} · {sub.classCount} kelas · {sub.chapterCount} bab
+                      </div>
+                    </div>
+                    <ChevronRight size={14} className="text-ink-muted flex-shrink-0 mr-1" />
+                  </Link>
                   <button
                     onClick={() => handleDelete(sub)}
                     className="w-8 h-8 rounded-[8px] flex items-center justify-center text-ink-muted hover:text-red-dark hover:bg-red-light transition-colors cursor-pointer"
