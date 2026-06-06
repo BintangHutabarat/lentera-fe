@@ -47,7 +47,12 @@ export default function QuizDetailPage() {
         setView("quiz");
       })
       .catch((err) => {
-        setLoadError(err?.message ?? "Gagal memuat quiz.");
+        const code = err?.code;
+        if (code === "MAX_ATTEMPTS_REACHED") {
+          setLoadError("Batas percobaan quiz telah tercapai. Kamu sudah tidak bisa mengerjakan quiz ini lagi.");
+        } else {
+          setLoadError(err?.message ?? "Gagal memuat quiz.");
+        }
         setView("quiz");
       });
   }, [params.id]);

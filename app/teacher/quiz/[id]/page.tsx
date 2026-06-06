@@ -2,8 +2,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Check, Loader2, Sparkles, Trash2, Users } from "lucide-react";
-import { getTeacherQuiz, deleteQuiz } from "@/lib/services/teacher";
+import { ArrowLeft, Check, Download, Loader2, Sparkles, Trash2, Users } from "lucide-react";
+import { getTeacherQuiz, deleteQuiz, exportQuiz } from "@/lib/services/teacher";
 import { isApiError } from "@/lib/api";
 import { subjectColorMap, cn } from "@/lib/utils";
 import type { TeacherQuizDetail } from "@/lib/services/teacher";
@@ -14,6 +14,7 @@ export default function TeacherQuizDetailPage() {
   const [quiz, setQuiz] = useState<TeacherQuizDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     getTeacherQuiz(id)
@@ -32,6 +33,16 @@ export default function TeacherQuizDetailPage() {
       alert(isApiError(e) ? e.message : "Gagal hapus.");
       setDeleting(false);
     }
+  };
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      await exportQuiz(id);
+    } catch {
+      alert("Gagal mengunduh rekap.");
+    }
+    setExporting(false);
   };
 
   if (loading) {
@@ -92,12 +103,15 @@ export default function TeacherQuizDetailPage() {
             <span className="px-2 py-0.5 rounded-full bg-surface-soft text-ink-muted font-bold">
               {quiz.durationMinutes} menit
             </span>
+            <span className="px-2 py-0.5 rounded-full bg-surface-soft text-ink-muted font-bold">
+              Maks {quiz.maxAttempts}x percobaan
+            </span>
           </div>
         </div>
 
         <Link
           href={`/teacher/quiz/${id}/hasil`}
-          className="card p-3.5 mb-3.5 flex items-center gap-3 cursor-pointer hover:border-brand-teal transition-all active:scale-[0.99]"
+          className="card p-3.5 mb-2.5 flex items-center gap-3 cursor-pointer hover:border-brand-teal transition-all active:scale-[0.99]"
         >
           <div className="w-10 h-10 rounded-[10px] bg-blue-light flex items-center justify-center flex-shrink-0">
             <Users size={18} className="text-brand-blue" />
@@ -108,6 +122,20 @@ export default function TeacherQuizDetailPage() {
           </div>
           <div className="text-ink-muted text-sm">›</div>
         </Link>
+
+        <button
+          onClick={handleExport}
+          disabled={exporting}
+          className="card p-3.5 mb-3.5 w-full flex items-center gap-3 cursor-pointer hover:border-brand-teal transition-all active:scale-[0.99] disabled:opacity-50"
+        >
+          <div className="w-10 h-10 rounded-[10px] bg-teal-light flex items-center justify-center flex-shrink-0">
+            {exporting ? <Loader2 size={18} className="animate-spin text-brand-teal" /> : <Download size={18} className="text-brand-teal" />}
+          </div>
+          <div className="flex-1 min-w-0 text-left">
+            <div className="text-[13px] font-extrabold text-ink">Unduh Rekap (.xlsx)</div>
+            <div className="text-[11px] text-ink-muted mt-0.5">Semua hasil quiz dalam Excel</div>
+          </div>
+        </button>
 
         <h3 className="text-[14px] font-extrabold text-ink mb-2.5">Daftar Soal</h3>
         <div className="flex flex-col gap-2.5">

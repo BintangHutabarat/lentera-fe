@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { CheckCircle2, Circle, Loader2, ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import { CheckCircle2, Circle, Loader2, ArrowLeft, ChevronRight } from "lucide-react";
 import { getSubject, completeChapter } from "@/lib/services/subjects";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { subjectColorMap } from "@/lib/utils";
@@ -122,22 +123,25 @@ export default function PelajaranDetailPage() {
                   {chapter.order}
                 </span>
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-[13px] font-semibold text-ink">{chapter.title}</div>
-                {chapter.completed && chapter.completedAt && (
-                  <div className="text-[10px] text-ink-muted mt-0.5">
-                    Selesai{" "}
-                    {new Date(chapter.completedAt).toLocaleDateString("id-ID", {
-                      day: "numeric",
-                      month: "short",
-                    })}
-                  </div>
-                )}
-              </div>
+              <Link href={`/student/pelajaran/${id}/${chapter.id}`} className="flex-1 min-w-0 flex items-center gap-1">
+                <div className="flex-1 min-w-0">
+                  <div className="text-[13px] font-semibold text-ink">{chapter.title}</div>
+                  {chapter.completed && chapter.completedAt && (
+                    <div className="text-[10px] text-ink-muted mt-0.5">
+                      Selesai{" "}
+                      {new Date(chapter.completedAt).toLocaleDateString("id-ID", {
+                        day: "numeric",
+                        month: "short",
+                      })}
+                    </div>
+                  )}
+                </div>
+                <ChevronRight size={14} className="text-ink-muted flex-shrink-0" />
+              </Link>
               <button
                 onClick={() => handleComplete(chapter)}
                 disabled={chapter.completed || !!completing}
-                className="flex-shrink-0 cursor-pointer disabled:cursor-default"
+                className="flex-shrink-0 cursor-pointer disabled:cursor-default ml-1"
                 aria-label={chapter.completed ? "Sudah selesai" : "Tandai selesai"}
               >
                 {completing === chapter.id ? (

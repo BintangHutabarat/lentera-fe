@@ -53,3 +53,10 @@ export function getStudentStats(): Promise<StudentStats> {
 export function getStudentBadges(): Promise<Badge[]> {
   return apiFetch<Badge[]>("/students/me/badges");
 }
+
+export function updateAvatar(avatarUrl: string): Promise<void> {
+  return apiFetch<void>("/students/me/avatar", {
+    method: "PATCH",
+    body: JSON.stringify({ avatarUrl }),
+  });
+}

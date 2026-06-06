@@ -41,3 +41,16 @@ export function getSubject(id: string): Promise<SubjectDetail> {
 export function completeChapter(chapterId: string): Promise<void> {
   return apiFetch<void>(`/subjects/chapters/${chapterId}/complete`, { method: "POST" });
 }
+
+export interface ChapterContent {
+  id: string;
+  order: number;
+  title: string;
+  content: string | null;
+  completed: boolean;
+  completedAt: string | null;
+}
+
+export function getChapter(subjectId: string, chapterId: string): Promise<ChapterContent> {
+  return apiFetch<ChapterContent>(`/subjects/${subjectId}/chapters/${chapterId}`);
+}

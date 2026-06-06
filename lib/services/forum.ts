@@ -95,3 +95,19 @@ export function getSavedPosts(params?: { cursor?: string; limit?: number }): Pro
   const query = qs.toString();
   return apiFetch<PaginatedPosts>(`/forum/me/saved${query ? `?${query}` : ""}`);
 }
+
+export function pinPost(id: string): Promise<void> {
+  return apiFetch<void>(`/forum/posts/${id}/pin`, { method: "POST" });
+}
+
+export function unpinPost(id: string): Promise<void> {
+  return apiFetch<void>(`/forum/posts/${id}/pin`, { method: "DELETE" });
+}
+
+export function deletePost(id: string): Promise<void> {
+  return apiFetch<void>(`/forum/posts/${id}`, { method: "DELETE" });
+}
+
+export function deleteReply(postId: string, replyId: string): Promise<void> {
+  return apiFetch<void>(`/forum/posts/${postId}/replies/${replyId}`, { method: "DELETE" });
+}

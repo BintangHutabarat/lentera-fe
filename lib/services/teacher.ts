@@ -208,6 +208,7 @@ export interface CreateQuizPayload {
   title: string;
   chapter: string;
   durationMinutes: number;
+  maxAttempts?: number;
   questions: QuizQuestionInput[];
 }
 
@@ -232,6 +233,7 @@ export interface TeacherQuizDetail {
   title: string;
   chapter: string;
   durationMinutes: number;
+  maxAttempts: number;
   totalQuestions: number;
   classSubject: {
     id: string;
@@ -250,6 +252,7 @@ export interface UpdateQuizPayload {
   title?: string;
   chapter?: string;
   durationMinutes?: number;
+  maxAttempts?: number;
   questions?: QuizQuestionInput[];
 }
 
@@ -275,4 +278,97 @@ export interface QuizSessionResult {
 
 export function getQuizSessions(quizId: string): Promise<QuizSessionResult[]> {
   return apiFetch<QuizSessionResult[]>(`/teacher/quizzes/${quizId}/sessions`);
+}
+
+// ── Announce ──────────────────────────────────────────────────────────────────
+
+export function announceToClass(classSubjectId: string, payload: { title: string; body: string }): Promise<void> {
+  return apiFetch<void>(`/teacher/subjects/${classSubjectId}/announce`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+// ── Student progress ──────────────────────────────────────────────────────────
+
+export interface StudentProgressAssignment {
+  id: string;
+  title: string;
+  dueAt: string;
+  submitted: boolean;
+  submittedAt: string | null;
+  score: number | null;
+  graded: boolean;
+}
+
+export interface StudentProgressQuiz {
+  id: string;
+  title: string;
+  attempted: boolean;
+  bestScore: number | null;
+  bestStars: number | null;
+}
+
+export interface StudentProgressChapter {
+  id: string;
+  order: number;
+  title: string;
+  completed: boolean;
+}
+
+export interface StudentProgress {
+  assignments: StudentProgressAssignment[];
+  quizzes: StudentProgressQuiz[];
+  chapters: StudentProgressChapter[];
+}
+
+export function getStudentProgress(classSubjectId: string, studentId: string): Promise<StudentProgress> {
+  return apiFetch<StudentProgress>(`/teacher/subjects/${classSubjectId}/students/${studentId}/progress`);
+}
+
+// ── Chapter content ───────────────────────────────────────────────────────────
+
+export function updateChapterContent(classSubjectId: string, chapterId: string, content: string): Promise<void> {
+  return apiFetch<void>(`/teacher/subjects/${classSubjectId}/chapters/${chapterId}/content`, {
+    method: "PATCH",
+    body: JSON.stringify({ content }),
+  });
+}
+
+// ── Export ────────────────────────────────────────────────────────────────────
+
+export async function exportAssignment(id: string): Promise<void> {
+  const { getAccessToken } = await import("@/lib/api");
+  const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+  const token = getAccessToken();
+  const res = await fetch(`${BASE_URL}/teacher/assignments/${id}/export`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Gagal mengunduh rekap.");
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `rekap-tugas-${id}.xlsx`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export async function exportQuiz(id: string): Promise<void> {
+  const { getAccessToken } = await import("@/lib/api");
+  const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+  const token = getAccessToken();
+  const res = await fetch(`${BASE_URL}/teacher/quizzes/${id}/export`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Gagal mengunduh rekap.");
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `rekap-quiz-${id}.xlsx`;
+  a.click();
+  URL.revokeObjectURL(url);
 }

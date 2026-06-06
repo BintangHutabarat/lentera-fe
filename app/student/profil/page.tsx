@@ -1,10 +1,11 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { UserCog, Bell, Lock, HelpCircle, LogOut, Loader2 } from "lucide-react";
+import { UserCog, Bell, Lock, HelpCircle, LogOut, Loader2, X, Camera } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { getStudentProfile, getStudentStats, getStudentBadges } from "@/lib/services/student";
+import { getStudentProfile, getStudentStats, getStudentBadges, updateAvatar } from "@/lib/services/student";
 import { logout } from "@/lib/services/auth";
+import { presignUpload, uploadFile } from "@/lib/services/uploads";
 import { Avatar } from "@/components/ui/Avatar";
 import type { StudentProfile, StudentStats, Badge } from "@/lib/services/student";
 
@@ -18,11 +19,15 @@ interface MenuItem {
 
 export default function ProfilPage() {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [stats, setStats] = useState<StudentStats | null>(null);
   const [badges, setBadges] = useState<Badge[]>([]);
   const [loading, setLoading] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [editingAvatar, setEditingAvatar] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([getStudentProfile(), getStudentStats(), getStudentBadges()])
@@ -41,8 +46,29 @@ export default function ProfilPage() {
     router.push("/auth/login/siswa");
   };
 
+  const handleAvatarFile = async (file: File) => {
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      setAvatarError("Ukuran foto maks 2 MB.");
+      return;
+    }
+    setUploadingAvatar(true);
+    setAvatarError(null);
+    try {
+      const { uploadUrl, fileKey } = await presignUpload("avatar", file.name, file.size, file.type);
+      await uploadFile(uploadUrl, file);
+      const avatarUrl = uploadUrl.split("?")[0];
+      await updateAvatar(avatarUrl || fileKey);
+      setProfile((prev) => prev ? { ...prev, avatar: avatarUrl || fileKey } : prev);
+      setEditingAvatar(false);
+    } catch {
+      setAvatarError("Gagal upload foto.");
+    }
+    setUploadingAvatar(false);
+  };
+
   const MENU_ITEMS: MenuItem[] = [
-    { Icon: UserCog,    bg: "#E6F6FD", label: "Edit Profil",   danger: false },
+    { Icon: UserCog,    bg: "#E6F6FD", label: "Edit Profil",   danger: false, onClick: () => setEditingAvatar(true) },
     { Icon: Bell,       bg: "#FEF9E7", label: "Notifikasi",    danger: false },
     { Icon: Lock,       bg: "#E3FBF5", label: "Keamanan Akun", danger: false },
     { Icon: HelpCircle, bg: "#EAFBF2", label: "Bantuan & FAQ", danger: false },
@@ -144,6 +170,56 @@ export default function ProfilPage() {
           ))}
         </div>
       </div>
+
+      {/* Avatar upload modal */}
+      {editingAvatar && (
+        <div className="fixed inset-0 bg-black/50 z-40 flex items-end" onClick={() => setEditingAvatar(false)}>
+          <div
+            className="w-full bg-surface-card rounded-t-[20px] p-5 flex flex-col gap-4"
+            style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-[15px] font-extrabold text-ink">Ganti Foto Profil</h3>
+              <button
+                onClick={() => setEditingAvatar(false)}
+                className="w-7 h-7 rounded-full bg-surface-soft flex items-center justify-center cursor-pointer"
+              >
+                <X size={14} className="text-ink-muted" />
+              </button>
+            </div>
+
+            {avatarError && (
+              <div className="text-[12px] text-red-dark bg-red-light rounded-[10px] px-3 py-2">{avatarError}</div>
+            )}
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleAvatarFile(file);
+              }}
+            />
+
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingAvatar}
+              className="h-12 rounded-[12px] bg-brand-blue text-white text-[14px] font-extrabold flex items-center justify-center gap-2 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition-opacity"
+            >
+              {uploadingAvatar ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Camera size={16} />
+              )}
+              {uploadingAvatar ? "Mengupload..." : "Pilih Foto"}
+            </button>
+            <p className="text-[11px] text-ink-muted text-center">Format: JPG, PNG, WebP. Maks 2 MB.</p>
+          </div>
+        </div>
+      )}
     </>
   );
 }
