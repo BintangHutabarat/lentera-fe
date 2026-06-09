@@ -1,12 +1,16 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, GraduationCap, Loader2, SendHorizonal, ThumbsUp } from "lucide-react";
+import { ArrowLeft, GraduationCap, Loader2, SendHorizonal, ThumbsUp, Trash2, Pin } from "lucide-react";
 import {
   getForumPost,
   likePost,
   unlikePost,
   replyToPost,
+  deletePost,
+  deleteReply,
+  pinPost,
+  unpinPost,
 } from "@/lib/services/forum";
 import { getMe } from "@/lib/services/auth";
 import { Chip } from "@/components/ui/Chip";
@@ -19,16 +23,21 @@ export default function ForumDetailPage() {
   const router = useRouter();
   const [detail, setDetail] = useState<ForumPostDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [myId, setMyId] = useState<string | null>(null);
+  const [myRole, setMyRole] = useState<string>("STUDENT");
   const [myInitials, setMyInitials] = useState("Me");
   const [myAvatarColor, setMyAvatarColor] = useState("#E0FAF6");
   const [replyText, setReplyText] = useState("");
   const [sending, setSending] = useState(false);
+  const [pinning, setPinning] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     Promise.all([getForumPost(id), getMe()])
       .then(([data, me]) => {
         setDetail(data);
+        setMyId(me.id);
+        setMyRole(me.role);
         const name = (me.profile as { name: string }).name ?? "";
         setMyInitials(name.split(" ").slice(0, 2).map((n: string) => n[0]).join(""));
       })
@@ -55,6 +64,47 @@ export default function ForumDetailPage() {
       post.likedByMe ? await unlikePost(id) : await likePost(id);
     } catch {
       setDetail((prev) => (prev ? { ...prev, post } : prev));
+    }
+  };
+
+  const handlePin = async () => {
+    if (!detail || pinning) return;
+    setPinning(true);
+    const isPinned = detail.post.isPinned;
+    try {
+      isPinned ? await unpinPost(id) : await pinPost(id);
+      setDetail((prev) => prev ? { ...prev, post: { ...prev.post, isPinned: !isPinned } } : prev);
+    } catch {
+      /* silent */
+    }
+    setPinning(false);
+  };
+
+  const handleDeletePost = async () => {
+    if (!detail || !confirm("Hapus diskusi ini?")) return;
+    try {
+      await deletePost(id);
+      router.back();
+    } catch {
+      /* silent */
+    }
+  };
+
+  const handleDeleteReply = async (replyId: string) => {
+    if (!confirm("Hapus balasan ini?")) return;
+    try {
+      await deleteReply(id, replyId);
+      setDetail((prev) =>
+        prev
+          ? {
+              ...prev,
+              post: { ...prev.post, replyCount: prev.post.replyCount - 1 },
+              replies: prev.replies.filter((r) => r.id !== replyId),
+            }
+          : prev,
+      );
+    } catch {
+      /* silent */
     }
   };
 
@@ -124,6 +174,11 @@ export default function ForumDetailPage() {
       <div className="px-3.5 pt-3.5 pb-28">
         {/* Original post */}
         <div className="card p-3.5 mb-3.5">
+          {post.isPinned && (
+            <div className="flex items-center gap-1.5 text-[10px] font-bold text-brand-blue mb-2.5">
+              <Pin size={11} /> Disematkan
+            </div>
+          )}
           <div className="flex gap-2.5 items-center mb-2.5">
             <div
               className="w-[36px] h-[36px] rounded-full flex items-center justify-center text-[12px] font-extrabold flex-shrink-0"
@@ -156,6 +211,25 @@ export default function ForumDetailPage() {
             >
               <ThumbsUp size={12} /> {post.likeCount}
             </button>
+            {(myRole === "TEACHER" || myRole === "ADMIN") && (
+              <button
+                onClick={handlePin}
+                disabled={pinning}
+                className={`text-[11px] font-semibold flex items-center gap-1 transition-colors cursor-pointer ${
+                  post.isPinned ? "text-brand-blue" : "text-ink-muted hover:text-brand-blue"
+                }`}
+              >
+                <Pin size={12} /> {post.isPinned ? "Lepas" : "Sematkan"}
+              </button>
+            )}
+            {(myId === post.author.id || myRole === "TEACHER" || myRole === "ADMIN") && (
+              <button
+                onClick={handleDeletePost}
+                className="text-[11px] font-semibold text-ink-muted hover:text-red-dark flex items-center gap-1 transition-colors cursor-pointer ml-auto"
+              >
+                <Trash2 size={12} /> Hapus
+              </button>
+            )}
           </div>
         </div>
 
@@ -184,6 +258,14 @@ export default function ForumDetailPage() {
                       </div>
                       <div className="text-[10px] text-ink-muted">{timeAgo(reply.createdAt)}</div>
                     </div>
+                    {(myId === reply.author.id || myRole === "TEACHER" || myRole === "ADMIN") && (
+                      <button
+                        onClick={() => handleDeleteReply(reply.id)}
+                        className="w-6 h-6 flex items-center justify-center text-ink-muted hover:text-red-dark transition-colors cursor-pointer flex-shrink-0"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    )}
                   </div>
                   <p className="text-[12px] text-ink-secondary leading-relaxed">{reply.content}</p>
                 </div>

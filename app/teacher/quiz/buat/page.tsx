@@ -33,6 +33,7 @@ function TeacherBuatQuizContent() {
   const [title, setTitle] = useState("");
   const [chapter, setChapter] = useState("");
   const [durationMinutes, setDurationMinutes] = useState(30);
+  const [maxAttempts, setMaxAttempts] = useState(1);
   const [questions, setQuestions] = useState<QuizQuestionInput[]>([emptyQuestion()]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -82,6 +83,7 @@ function TeacherBuatQuizContent() {
         title: title.trim(),
         chapter: chapter.trim(),
         durationMinutes,
+        maxAttempts,
         questions: questions.map((q, i) => ({ ...q, order: i + 1 })),
       });
       router.push(`/teacher/quiz/${res.id}`);
@@ -149,6 +151,20 @@ function TeacherBuatQuizContent() {
               className="w-full h-11 rounded-[10px] border border-border bg-surface-card px-3 text-[13px] text-ink outline-none focus:border-brand-blue"
             />
           </div>
+        </div>
+
+        <div>
+          <label className="block text-[11px] font-extrabold text-ink mb-1.5">Maks Percobaan</label>
+          <select
+            value={maxAttempts}
+            onChange={(e) => setMaxAttempts(Number(e.target.value))}
+            className="w-full h-11 rounded-[10px] border border-border bg-surface-card px-3 text-[13px] text-ink outline-none focus:border-brand-blue cursor-pointer"
+          >
+            {[1, 2, 3, 5].map((n) => (
+              <option key={n} value={n}>{n}x {n === 1 ? "(default)" : ""}</option>
+            ))}
+          </select>
+          <p className="text-[10px] text-ink-muted mt-1">Berapa kali siswa boleh mengerjakan quiz ini.</p>
         </div>
 
         <div>

@@ -400,3 +400,55 @@ export function getAdminClassSubjectQuizzes(classSubjectId: string): Promise<Adm
 export function deleteAdminQuiz(id: string): Promise<void> {
   return apiFetch<void>(`/admin/quizzes/${id}`, { method: "DELETE" });
 }
+
+// ── Academic Years ─────────────────────────────────────────────────────────────
+
+export interface AcademicYear {
+  id: string;
+  label: string;
+  isActive: boolean;
+}
+
+export function getAcademicYears(): Promise<AcademicYear[]> {
+  return apiFetch<AcademicYear[]>("/admin/academic-years");
+}
+
+export function createAcademicYear(label: string): Promise<AcademicYear> {
+  return apiFetch<AcademicYear>("/admin/academic-years", {
+    method: "POST",
+    body: JSON.stringify({ label }),
+  });
+}
+
+export function activateAcademicYear(id: string): Promise<void> {
+  return apiFetch<void>(`/admin/academic-years/${id}/activate`, { method: "PATCH" });
+}
+
+export function deleteAcademicYear(id: string): Promise<void> {
+  return apiFetch<void>(`/admin/academic-years/${id}`, { method: "DELETE" });
+}
+
+// ── Principal ─────────────────────────────────────────────────────────────────
+
+export interface CreatePrincipalPayload {
+  name: string;
+  email: string;
+  password?: string;
+}
+
+export interface CreatePrincipalResult {
+  id: string;
+  name: string;
+  email: string;
+  role: "PRINCIPAL";
+  temporaryPassword?: string;
+}
+
+export function createPrincipal(payload: CreatePrincipalPayload): Promise<CreatePrincipalResult> {
+  const body: Record<string, string> = { name: payload.name, email: payload.email };
+  if (payload.password) body.password = payload.password;
+  return apiFetch<CreatePrincipalResult>("/admin/users/principals", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}

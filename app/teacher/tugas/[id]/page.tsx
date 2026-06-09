@@ -2,11 +2,12 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Calendar, FileText, Loader2, Trash2, CheckCircle2, Clock } from "lucide-react";
+import { ArrowLeft, Calendar, Download, FileText, Loader2, Trash2, CheckCircle2, Clock } from "lucide-react";
 import {
   getTeacherAssignment,
   getAssignmentSubmissions,
   deleteAssignment,
+  exportAssignment,
 } from "@/lib/services/teacher";
 import { Avatar } from "@/components/ui/Avatar";
 import { isApiError } from "@/lib/api";
@@ -26,6 +27,7 @@ export default function TeacherTugasDetailPage() {
   const [submissions, setSubmissions] = useState<SubmissionEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     Promise.all([getTeacherAssignment(id), getAssignmentSubmissions(id)])
@@ -47,6 +49,16 @@ export default function TeacherTugasDetailPage() {
       alert(isApiError(e) ? e.message : "Gagal hapus.");
       setDeleting(false);
     }
+  };
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      await exportAssignment(id);
+    } catch {
+      alert("Gagal mengunduh rekap.");
+    }
+    setExporting(false);
   };
 
   if (loading) {
@@ -167,6 +179,20 @@ export default function TeacherTugasDetailPage() {
             <div className="text-[10px] text-ink-muted mt-0.5">Dinilai</div>
           </div>
         </div>
+
+        <button
+          onClick={handleExport}
+          disabled={exporting}
+          className="card p-3.5 mb-3.5 w-full flex items-center gap-3 cursor-pointer hover:border-brand-teal transition-all active:scale-[0.99] disabled:opacity-50"
+        >
+          <div className="w-10 h-10 rounded-[10px] bg-teal-light flex items-center justify-center flex-shrink-0">
+            {exporting ? <Loader2 size={18} className="animate-spin text-brand-teal" /> : <Download size={18} className="text-brand-teal" />}
+          </div>
+          <div className="flex-1 min-w-0 text-left">
+            <div className="text-[13px] font-extrabold text-ink">Unduh Rekap Nilai (.xlsx)</div>
+            <div className="text-[11px] text-ink-muted mt-0.5">Semua nilai dan status pengumpulan</div>
+          </div>
+        </button>
 
         <h3 className="text-[14px] font-extrabold text-ink mb-2.5">Pengumpulan Siswa</h3>
         <div className="card mb-3.5">

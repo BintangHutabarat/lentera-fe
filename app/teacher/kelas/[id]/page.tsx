@@ -2,23 +2,39 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ClipboardList, Brain, Users } from "lucide-react";
+import { ArrowLeft, Award, Bell, BookOpen, Brain, CalendarCheck, ChevronRight, ClipboardList, Loader2, Pencil, ScrollText, Users, X } from "lucide-react";
 import {
   getTeacherClassSubjects,
   getClassSubjectStudents,
+  announceToClass,
+  updateChapterContent,
 } from "@/lib/services/teacher";
+import { getAdminChapters } from "@/lib/services/admin";
 import { Avatar } from "@/components/ui/Avatar";
 import { subjectColorMap } from "@/lib/utils";
 import { subjectIcons } from "@/lib/icons";
 import type { TeacherClassSubject, TeacherStudent } from "@/lib/services/teacher";
+import type { AdminChapter } from "@/lib/services/admin";
 
 export default function TeacherKelasDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [classSubject, setClassSubject] = useState<TeacherClassSubject | null>(null);
   const [students, setStudents] = useState<TeacherStudent[]>([]);
+  const [chapters, setChapters] = useState<AdminChapter[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Announce modal
+  const [announcing, setAnnouncing] = useState(false);
+  const [announceTitle, setAnnounceTitle] = useState("");
+  const [announceBody, setAnnounceBody] = useState("");
+  const [sendingAnnounce, setSendingAnnounce] = useState(false);
+
+  // Chapter editor modal
+  const [editingChapter, setEditingChapter] = useState<AdminChapter | null>(null);
+  const [chapterContent, setChapterContent] = useState("");
+  const [savingChapter, setSavingChapter] = useState(false);
 
   useEffect(() => {
     Promise.all([getTeacherClassSubjects(), getClassSubjectStudents(id)])
@@ -27,6 +43,11 @@ export default function TeacherKelasDetailPage() {
         if (!found) setError("Kelas-mapel tidak ditemukan.");
         setClassSubject(found);
         setStudents(studs);
+        if (found) {
+          getAdminChapters(found.subject.id)
+            .then(setChapters)
+            .catch(() => {});
+        }
       })
       .catch((e) => setError(e?.message ?? "Gagal memuat data."))
       .finally(() => setLoading(false));
@@ -51,6 +72,32 @@ export default function TeacherKelasDetailPage() {
 
   const c = subjectColorMap[classSubject.subject.color];
   const SubjIcon = subjectIcons[classSubject.subject.color];
+
+  const handleAnnounce = async () => {
+    if (!announceTitle.trim() || !announceBody.trim() || sendingAnnounce) return;
+    setSendingAnnounce(true);
+    try {
+      await announceToClass(id, { title: announceTitle.trim(), body: announceBody.trim() });
+      setAnnouncing(false);
+      setAnnounceTitle("");
+      setAnnounceBody("");
+    } catch {
+      /* silent */
+    }
+    setSendingAnnounce(false);
+  };
+
+  const handleSaveChapter = async () => {
+    if (!editingChapter || savingChapter) return;
+    setSavingChapter(true);
+    try {
+      await updateChapterContent(id, editingChapter.id, chapterContent);
+      setEditingChapter(null);
+    } catch {
+      /* silent */
+    }
+    setSavingChapter(false);
+  };
 
   return (
     <>
@@ -110,7 +157,7 @@ export default function TeacherKelasDetailPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2.5 mb-3.5">
+        <div className="grid grid-cols-2 gap-2.5 mb-2.5">
           <Link
             href={`/teacher/tugas/buat?classSubjectId=${classSubject.id}`}
             className="card p-3.5 text-center cursor-pointer hover:border-brand-teal transition-all active:scale-95"
@@ -126,6 +173,67 @@ export default function TeacherKelasDetailPage() {
             <div className="text-[11px] font-extrabold text-ink">Buat Quiz</div>
           </Link>
         </div>
+        <div className="grid grid-cols-3 gap-2.5 mb-3.5">
+          <Link
+            href={`/teacher/kelas/${classSubject.id}/pertemuan`}
+            className="card p-3.5 text-center cursor-pointer hover:border-brand-teal transition-all active:scale-95"
+          >
+            <CalendarCheck size={18} className="mx-auto mb-1.5 text-brand-blue" />
+            <div className="text-[11px] font-extrabold text-ink">Absensi</div>
+          </Link>
+          <Link
+            href={`/teacher/kelas/${classSubject.id}/ujian`}
+            className="card p-3.5 text-center cursor-pointer hover:border-brand-teal transition-all active:scale-95"
+          >
+            <ScrollText size={18} className="mx-auto mb-1.5 text-yellow-dark" />
+            <div className="text-[11px] font-extrabold text-ink">Ujian</div>
+          </Link>
+          <Link
+            href={`/teacher/kelas/${classSubject.id}/nilai-akhir`}
+            className="card p-3.5 text-center cursor-pointer hover:border-brand-teal transition-all active:scale-95"
+          >
+            <Award size={18} className="mx-auto mb-1.5 text-brand-teal" />
+            <div className="text-[11px] font-extrabold text-ink">Nilai Akhir</div>
+          </Link>
+          <button
+            onClick={() => setAnnouncing(true)}
+            className="card p-3.5 text-center cursor-pointer hover:border-brand-teal transition-all active:scale-95 col-span-3"
+          >
+            <Bell size={18} className="mx-auto mb-1.5 text-yellow-dark" />
+            <div className="text-[11px] font-extrabold text-ink">Umumkan</div>
+          </button>
+        </div>
+
+        {/* Chapters */}
+        {chapters.length > 0 && (
+          <>
+            <h3 className="text-[14px] font-extrabold text-ink mb-2.5 flex items-center gap-1.5">
+              <BookOpen size={15} /> Materi ({chapters.length} bab)
+            </h3>
+            <div className="card mb-3.5">
+              {chapters.map((ch, i) => (
+                <button
+                  key={ch.id}
+                  onClick={() => { setEditingChapter(ch); setChapterContent(""); }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-surface-soft transition-colors cursor-pointer ${
+                    i < chapters.length - 1 ? "border-b border-surface-soft" : ""
+                  }`}
+                >
+                  <div className="w-6 h-6 rounded-full bg-surface-soft text-[10px] font-extrabold text-ink-muted flex items-center justify-center flex-shrink-0">
+                    {ch.order}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[12px] font-bold text-ink truncate">{ch.title}</div>
+                    {ch.hasContent && (
+                      <div className="text-[10px] text-brand-teal font-bold mt-0.5">Ada konten</div>
+                    )}
+                  </div>
+                  <Pencil size={13} className="text-ink-muted flex-shrink-0" />
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
         <h3 className="text-[14px] font-extrabold text-ink mb-2.5">Daftar Siswa ({students.length})</h3>
         {students.length === 0 ? (
@@ -137,9 +245,10 @@ export default function TeacherKelasDetailPage() {
             {students.map((s, i) => {
               const initials = s.name.split(" ").slice(0, 2).map((n) => n[0]).join("");
               return (
-                <div
+                <Link
                   key={s.id}
-                  className={`flex gap-2.5 items-center px-4 py-2.5 ${
+                  href={`/teacher/kelas/${id}/${s.id}`}
+                  className={`flex gap-2.5 items-center px-4 py-2.5 hover:bg-surface-soft transition-colors cursor-pointer ${
                     i < students.length - 1 ? "border-b border-surface-soft" : ""
                   }`}
                 >
@@ -148,16 +257,96 @@ export default function TeacherKelasDetailPage() {
                     <div className="text-[12px] font-bold text-ink truncate">{s.name}</div>
                     <div className="text-[10px] text-ink-muted mt-0.5">NIS: {s.nis}</div>
                   </div>
-                  <div className="text-right flex-shrink-0">
-                    <div className="text-[11px] font-extrabold text-brand-blue">Lv {s.level}</div>
-                    <div className="text-[10px] text-ink-muted">{s.xp.toLocaleString()} XP</div>
+                  <div className="text-right flex-shrink-0 flex items-center gap-2">
+                    <div>
+                      <div className="text-[11px] font-extrabold text-brand-blue">Lv {s.level}</div>
+                      <div className="text-[10px] text-ink-muted">{s.xp.toLocaleString()} XP</div>
+                    </div>
+                    <ChevronRight size={13} className="text-ink-muted" />
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>
         )}
       </div>
+
+      {/* Announce modal */}
+      {announcing && (
+        <div className="fixed inset-0 bg-black/50 z-40 flex items-end" onClick={() => setAnnouncing(false)}>
+          <div
+            className="w-full bg-surface-card rounded-t-[20px] p-5 flex flex-col gap-3.5"
+            style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-[15px] font-extrabold text-ink">Kirim Pengumuman</h3>
+              <button onClick={() => setAnnouncing(false)} className="w-7 h-7 rounded-full bg-surface-soft flex items-center justify-center cursor-pointer">
+                <X size={14} className="text-ink-muted" />
+              </button>
+            </div>
+            <input
+              autoFocus
+              value={announceTitle}
+              onChange={(e) => setAnnounceTitle(e.target.value)}
+              placeholder="Judul pengumuman"
+              className="w-full h-11 rounded-[10px] border border-border bg-surface-soft px-3.5 text-[13px] text-ink outline-none focus:border-brand-blue"
+            />
+            <textarea
+              value={announceBody}
+              onChange={(e) => setAnnounceBody(e.target.value)}
+              placeholder="Isi pengumuman..."
+              rows={3}
+              className="w-full resize-none bg-surface-soft rounded-[10px] px-3.5 py-3 text-[13px] text-ink placeholder:text-ink-muted outline-none focus:ring-2 focus:ring-brand-blue/20 transition-all leading-relaxed"
+            />
+            <button
+              onClick={handleAnnounce}
+              disabled={!announceTitle.trim() || !announceBody.trim() || sendingAnnounce}
+              className="h-12 rounded-[12px] bg-brand-blue text-white text-[14px] font-extrabold flex items-center justify-center gap-2 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+            >
+              {sendingAnnounce ? <Loader2 size={16} className="animate-spin" /> : <Bell size={16} />}
+              {sendingAnnounce ? "Mengirim..." : "Kirim ke Semua Siswa"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Chapter content editor modal */}
+      {editingChapter && (
+        <div className="fixed inset-0 bg-black/50 z-40 flex items-end" onClick={() => setEditingChapter(null)}>
+          <div
+            className="w-full bg-surface-card rounded-t-[20px] p-5 flex flex-col gap-3.5"
+            style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex-1 min-w-0 mr-3">
+                <h3 className="text-[15px] font-extrabold text-ink truncate">{editingChapter.title}</h3>
+                <p className="text-[11px] text-ink-muted">Edit konten materi (Markdown)</p>
+              </div>
+              <button onClick={() => setEditingChapter(null)} className="w-7 h-7 rounded-full bg-surface-soft flex items-center justify-center cursor-pointer flex-shrink-0">
+                <X size={14} className="text-ink-muted" />
+              </button>
+            </div>
+            <textarea
+              autoFocus
+              value={chapterContent}
+              onChange={(e) => setChapterContent(e.target.value)}
+              placeholder="# Judul Bab&#10;&#10;Tuliskan konten materi di sini (Markdown)..."
+              rows={8}
+              className="w-full resize-none bg-surface-soft rounded-[10px] px-3.5 py-3 text-[13px] text-ink font-mono placeholder:text-ink-muted outline-none focus:ring-2 focus:ring-brand-blue/20 transition-all leading-relaxed"
+            />
+            <button
+              onClick={handleSaveChapter}
+              disabled={savingChapter}
+              className="h-12 rounded-[12px] bg-brand-blue text-white text-[14px] font-extrabold flex items-center justify-center gap-2 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+            >
+              {savingChapter ? <Loader2 size={16} className="animate-spin" /> : <Pencil size={16} />}
+              {savingChapter ? "Menyimpan..." : "Simpan Konten"}
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }

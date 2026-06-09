@@ -3,23 +3,23 @@
 
 @theme {
   /* Brand colors */
-  --color-brand-blue:    #2B9FD8;
+  --color-brand-blue:    #22A96C;
   --color-brand-teal:    #3DD6B5;
   --color-brand-green:   #5FE0A0;
   --color-brand-yellow:  #F5C518;
 
   /* Surface colors */
-  --color-surface-page:  #F0FAFA;
+  --color-surface-page:  #F2FAF6;
   --color-surface-card:  #FFFFFF;
-  --color-surface-soft:  #E5F4F8;
+  --color-surface-soft:  #E3F5EC;
 
   /* Border */
-  --color-border:        #D0E8F0;
+  --color-border:        #C5E8D6;
 
   /* Text / ink */
-  --color-ink:           #1C3B4A;
-  --color-ink-muted:     #6B8E9F;
-  --color-ink-secondary: #4A6E7E;
+  --color-ink:           #1A3B28;
+  --color-ink-muted:     #5E8A72;
+  --color-ink-secondary: #3D6B52;
 
   /* Subject colors */
   --color-blue-light:    #E3F4FC;
@@ -38,14 +38,14 @@
 }
 
 :root {
-  --brand-grad: linear-gradient(135deg, #2B9FD8 0%, #3DD6B5 60%, #7EEFC7 100%);
+  --brand-grad: linear-gradient(135deg, #22A96C 0%, #3DD6B5 60%, #7EEFC7 100%);
 }
 
 @layer base {
   html, body {
     font-family: 'Plus Jakarta Sans', sans-serif;
-    background-color: #F0FAFA;
-    color: #1C3B4A;
+    background-color: #F2FAF6;
+    color: #1A3B28;
     -webkit-font-smoothing: antialiased;
   }
   body {
