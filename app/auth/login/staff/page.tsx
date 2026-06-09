@@ -36,6 +36,8 @@ export default function LoginStaffPage() {
         router.push("/teacher/beranda");
       } else if (user.role === "ADMIN") {
         router.push("/admin/beranda");
+      } else if (user.role === "PRINCIPAL") {
+        router.push("/principal/beranda");
       } else {
         router.push("/student/beranda");
       }
@@ -55,8 +57,8 @@ export default function LoginStaffPage() {
           <ShieldCheck size={20} className="text-teal-dark" />
         </div>
         <div>
-          <h1 className="text-[18px] font-extrabold text-ink leading-tight">Masuk Guru / Admin</h1>
-          <p className="text-[11px] text-ink-muted">Gunakan email dan password akun staf</p>
+          <h1 className="text-[18px] font-extrabold text-ink leading-tight">Masuk Staf</h1>
+          <p className="text-[11px] text-ink-muted">Guru · Admin · Kepala Sekolah</p>
         </div>
       </div>
 

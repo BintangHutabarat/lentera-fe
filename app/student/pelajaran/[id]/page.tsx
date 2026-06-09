@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle2, Circle, Loader2, ArrowLeft, ChevronRight } from "lucide-react";
+import { CheckCircle2, Circle, Loader2, ArrowLeft, CalendarDays, ChevronRight } from "lucide-react";
 import { getSubject, completeChapter } from "@/lib/services/subjects";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { subjectColorMap } from "@/lib/utils";
@@ -101,6 +101,18 @@ export default function PelajaranDetailPage() {
             <div className="text-[10px] text-ink-muted mt-1">{progress}% selesai</div>
           </div>
         </div>
+
+        {/* Absensi shortcut */}
+        <Link
+          href={`/student/pelajaran/${id}/absensi`}
+          className="card px-4 py-3 mb-3.5 flex items-center gap-3 hover:border-brand-teal transition-all cursor-pointer"
+        >
+          <div className="w-9 h-9 rounded-[10px] bg-surface-soft flex items-center justify-center flex-shrink-0">
+            <CalendarDays size={17} className="text-brand-blue" />
+          </div>
+          <span className="flex-1 text-[13px] font-extrabold text-ink">Rekap Absensi</span>
+          <ChevronRight size={14} className="text-ink-muted" />
+        </Link>
 
         {/* Chapter list */}
         <h3 className="text-[13px] font-extrabold text-ink mb-2.5">Daftar Bab</h3>

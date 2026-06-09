@@ -25,11 +25,16 @@ export interface AdminProfile {
   school: string;
 }
 
+export interface PrincipalProfile {
+  name: string;
+  school: string;
+}
+
 export interface AuthUser {
   id: string;
-  role: "STUDENT" | "TEACHER" | "ADMIN";
+  role: "STUDENT" | "TEACHER" | "ADMIN" | "PRINCIPAL";
   mustChangePassword: boolean;
-  profile: StudentProfile | TeacherProfile | AdminProfile;
+  profile: StudentProfile | TeacherProfile | AdminProfile | PrincipalProfile;
 }
 
 export interface LoginResponse {

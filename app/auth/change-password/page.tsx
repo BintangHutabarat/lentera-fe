@@ -12,7 +12,7 @@ const ERROR_MESSAGES: Record<string, string> = {
 
 export default function ChangePasswordPage() {
   const router = useRouter();
-  const [role, setRole] = useState<"STUDENT" | "TEACHER" | "ADMIN" | null>(null);
+  const [role, setRole] = useState<"STUDENT" | "TEACHER" | "ADMIN" | "PRINCIPAL" | null>(null);
   const [currentPwd, setCurrentPwd] = useState("");
   const [newPwd, setNewPwd] = useState("");
   const [showCurrent, setShowCurrent] = useState(false);

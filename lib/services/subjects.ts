@@ -54,3 +54,36 @@ export interface ChapterContent {
 export function getChapter(subjectId: string, chapterId: string): Promise<ChapterContent> {
   return apiFetch<ChapterContent>(`/subjects/${subjectId}/chapters/${chapterId}`);
 }
+
+// ── Student Attendance ────────────────────────────────────────────────────────
+
+export type StudentAttendanceStatus = "HADIR" | "SAKIT" | "IZIN" | "ALPHA";
+
+export interface StudentAttendanceSummary {
+  total: number;
+  hadir: number;
+  sakit: number;
+  izin: number;
+  alpha: number;
+  percentageHadir: number | null;
+}
+
+export interface StudentAttendanceMeeting {
+  meetingId: string;
+  meetingNumber: number;
+  status: StudentAttendanceStatus | null;
+  date: string;
+  meetingStatus: "OPEN" | "CLOSED";
+}
+
+export interface StudentAttendance {
+  classSubjectId: string;
+  subject: { id: string; name: string; shortName: string };
+  totalMeetings: number;
+  summary: StudentAttendanceSummary;
+  meetings: StudentAttendanceMeeting[];
+}
+
+export function getStudentAttendance(classSubjectId: string): Promise<StudentAttendance> {
+  return apiFetch<StudentAttendance>(`/students/me/class-subjects/${classSubjectId}/attendance`);
+}

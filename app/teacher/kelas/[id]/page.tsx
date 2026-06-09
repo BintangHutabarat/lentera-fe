@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Bell, BookOpen, Brain, ChevronRight, ClipboardList, Loader2, Pencil, Users, X } from "lucide-react";
+import { ArrowLeft, Award, Bell, BookOpen, Brain, CalendarCheck, ChevronRight, ClipboardList, Loader2, Pencil, ScrollText, Users, X } from "lucide-react";
 import {
   getTeacherClassSubjects,
   getClassSubjectStudents,
@@ -157,7 +157,7 @@ export default function TeacherKelasDetailPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2.5 mb-3.5">
+        <div className="grid grid-cols-2 gap-2.5 mb-2.5">
           <Link
             href={`/teacher/tugas/buat?classSubjectId=${classSubject.id}`}
             className="card p-3.5 text-center cursor-pointer hover:border-brand-teal transition-all active:scale-95"
@@ -172,9 +172,32 @@ export default function TeacherKelasDetailPage() {
             <Brain size={18} className="mx-auto mb-1.5 text-teal-dark" />
             <div className="text-[11px] font-extrabold text-ink">Buat Quiz</div>
           </Link>
+        </div>
+        <div className="grid grid-cols-3 gap-2.5 mb-3.5">
+          <Link
+            href={`/teacher/kelas/${classSubject.id}/pertemuan`}
+            className="card p-3.5 text-center cursor-pointer hover:border-brand-teal transition-all active:scale-95"
+          >
+            <CalendarCheck size={18} className="mx-auto mb-1.5 text-brand-blue" />
+            <div className="text-[11px] font-extrabold text-ink">Absensi</div>
+          </Link>
+          <Link
+            href={`/teacher/kelas/${classSubject.id}/ujian`}
+            className="card p-3.5 text-center cursor-pointer hover:border-brand-teal transition-all active:scale-95"
+          >
+            <ScrollText size={18} className="mx-auto mb-1.5 text-yellow-dark" />
+            <div className="text-[11px] font-extrabold text-ink">Ujian</div>
+          </Link>
+          <Link
+            href={`/teacher/kelas/${classSubject.id}/nilai-akhir`}
+            className="card p-3.5 text-center cursor-pointer hover:border-brand-teal transition-all active:scale-95"
+          >
+            <Award size={18} className="mx-auto mb-1.5 text-brand-teal" />
+            <div className="text-[11px] font-extrabold text-ink">Nilai Akhir</div>
+          </Link>
           <button
             onClick={() => setAnnouncing(true)}
-            className="card p-3.5 text-center cursor-pointer hover:border-brand-teal transition-all active:scale-95"
+            className="card p-3.5 text-center cursor-pointer hover:border-brand-teal transition-all active:scale-95 col-span-3"
           >
             <Bell size={18} className="mx-auto mb-1.5 text-yellow-dark" />
             <div className="text-[11px] font-extrabold text-ink">Umumkan</div>

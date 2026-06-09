@@ -372,3 +372,181 @@ export async function exportQuiz(id: string): Promise<void> {
   a.click();
   URL.revokeObjectURL(url);
 }
+
+// ── Meetings & Attendance ──────────────────────────────────────────────────────
+
+export type AttendanceStatus = "HADIR" | "SAKIT" | "IZIN" | "ALPHA";
+export type MeetingStatus = "OPEN" | "CLOSED";
+
+export interface MeetingListItem {
+  id: string;
+  meetingNumber: number;
+  status: MeetingStatus;
+  startedAt: string;
+  endedAt: string | null;
+  studentCount: number;
+}
+
+export interface MeetingsResponse {
+  totalMeetings: number;
+  meetings: MeetingListItem[];
+}
+
+export interface MeetingAttendanceEntry {
+  studentId: string;
+  name: string;
+  nis: string;
+  status: AttendanceStatus;
+}
+
+export interface MeetingAttendance {
+  meeting: {
+    id: string;
+    meetingNumber: number;
+    status: MeetingStatus;
+    startedAt: string;
+    endedAt: string | null;
+  };
+  entries: MeetingAttendanceEntry[];
+}
+
+export function getMeetings(classSubjectId: string): Promise<MeetingsResponse> {
+  return apiFetch<MeetingsResponse>(`/teacher/class-subjects/${classSubjectId}/meetings`);
+}
+
+export function openMeeting(classSubjectId: string): Promise<MeetingListItem> {
+  return apiFetch<MeetingListItem>(`/teacher/class-subjects/${classSubjectId}/meetings`, { method: "POST" });
+}
+
+export function closeMeeting(meetingId: string): Promise<void> {
+  return apiFetch<void>(`/teacher/meetings/${meetingId}/close`, { method: "PATCH" });
+}
+
+export function getMeetingAttendance(meetingId: string): Promise<MeetingAttendance> {
+  return apiFetch<MeetingAttendance>(`/teacher/meetings/${meetingId}/attendance`);
+}
+
+export function updateMeetingAttendance(
+  meetingId: string,
+  entries: { studentId: string; status: AttendanceStatus }[]
+): Promise<void> {
+  return apiFetch<void>(`/teacher/meetings/${meetingId}/attendance`, {
+    method: "PATCH",
+    body: JSON.stringify({ entries }),
+  });
+}
+
+// ── Exams ─────────────────────────────────────────────────────────────────────
+
+export interface TeacherExam {
+  id: string;
+  title: string;
+  description: string | null;
+  maxScore: number;
+  date: string | null;
+  gradedCount: number;
+  createdAt: string;
+}
+
+export interface ExamGradeEntry {
+  studentId: string;
+  name: string;
+  nis: string;
+  score: number | null;
+  notes: string | null;
+  gradedAt: string | null;
+}
+
+export interface ExamGrades {
+  exam: { id: string; title: string; maxScore: number; date: string | null };
+  entries: ExamGradeEntry[];
+}
+
+export function getExams(classSubjectId: string): Promise<TeacherExam[]> {
+  return apiFetch<TeacherExam[]>(`/teacher/class-subjects/${classSubjectId}/exams`);
+}
+
+export function createExam(
+  classSubjectId: string,
+  payload: { title: string; description?: string; maxScore?: number; date?: string }
+): Promise<{ id: string }> {
+  return apiFetch<{ id: string }>(`/teacher/class-subjects/${classSubjectId}/exams`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateExam(
+  id: string,
+  payload: { title?: string; description?: string; maxScore?: number; date?: string }
+): Promise<void> {
+  return apiFetch<void>(`/teacher/exams/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteExam(id: string): Promise<void> {
+  return apiFetch<void>(`/teacher/exams/${id}`, { method: "DELETE" });
+}
+
+export function getExamGrades(id: string): Promise<ExamGrades> {
+  return apiFetch<ExamGrades>(`/teacher/exams/${id}/grades`);
+}
+
+export function updateExamGrades(
+  id: string,
+  entries: { studentId: string; score: number | null; notes?: string }[]
+): Promise<void> {
+  return apiFetch<void>(`/teacher/exams/${id}/grades`, {
+    method: "PUT",
+    body: JSON.stringify({ entries }),
+  });
+}
+
+// ── Final Grades ──────────────────────────────────────────────────────────────
+
+export interface FinalGradeEntry {
+  studentId: string;
+  name: string;
+  nis: string;
+  refAssignment: number | null;
+  refQuiz: number | null;
+  refExam: number | null;
+  refAttendance: number | null;
+  finalGrade: number | null;
+  notes: string | null;
+  gradedAt: string | null;
+}
+
+export interface FinalGradesResponse {
+  classSubjectId: string;
+  academicYearId: string;
+  academicYearLabel: string;
+  semester: number;
+  entries: FinalGradeEntry[];
+}
+
+export function getFinalGrades(
+  classSubjectId: string,
+  academicYearId: string,
+  semester: 1 | 2
+): Promise<FinalGradesResponse> {
+  return apiFetch<FinalGradesResponse>(
+    `/teacher/class-subjects/${classSubjectId}/final-grades?academicYearId=${academicYearId}&semester=${semester}`
+  );
+}
+
+export function saveFinalGrades(
+  classSubjectId: string,
+  payload: {
+    academicYearId: string;
+    semester: 1 | 2;
+    entries: { studentId: string; finalGrade: number | null; notes?: string }[];
+  }
+): Promise<void> {
+  return apiFetch<void>(`/teacher/class-subjects/${classSubjectId}/final-grades`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}

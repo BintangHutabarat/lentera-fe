@@ -1,0 +1,74 @@
+"use client";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { BookOpen } from "lucide-react";
+import { PageTopbar } from "@/components/layout/PageTopbar";
+import { getPrincipalClasses } from "@/lib/services/principal";
+import type { PrincipalClass } from "@/lib/services/principal";
+
+export default function PrincipalKelasPage() {
+  const [classes, setClasses] = useState<PrincipalClass[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getPrincipalClasses()
+      .then(setClasses)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const grouped = classes.reduce<Record<number, PrincipalClass[]>>((acc, c) => {
+    if (!acc[c.gradeYear]) acc[c.gradeYear] = [];
+    acc[c.gradeYear].push(c);
+    return acc;
+  }, {});
+
+  return (
+    <>
+      <PageTopbar title="Data Kelas" subtitle={`${classes.length} kelas terdaftar`} />
+
+      <div className="px-3.5 pt-3.5 pb-24 flex flex-col gap-3.5">
+        {loading ? (
+          <div className="text-center text-[13px] text-ink-muted py-10">Memuat...</div>
+        ) : classes.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-14 text-center">
+            <div className="w-14 h-14 rounded-full bg-yellow-light flex items-center justify-center mb-3">
+              <BookOpen size={24} className="text-yellow-dark" />
+            </div>
+            <p className="text-[13px] font-bold text-ink">Belum ada kelas</p>
+          </div>
+        ) : (
+          Object.entries(grouped)
+            .sort(([a], [b]) => Number(a) - Number(b))
+            .map(([gradeYear, list]) => (
+              <div key={gradeYear}>
+                <h3 className="text-[13px] font-extrabold text-ink-muted mb-2">Tingkat {gradeYear}</h3>
+                <div className="card">
+                  {list.map((c, i) => (
+                    <Link
+                      key={c.id}
+                      href={`/principal/kelas/${c.id}`}
+                      className={`flex items-center gap-3 px-4 py-3 hover:bg-surface-soft transition-colors ${
+                        i < list.length - 1 ? "border-b border-surface-soft" : ""
+                      }`}
+                    >
+                      <div className="w-10 h-10 rounded-[10px] bg-yellow-light flex items-center justify-center flex-shrink-0">
+                        <BookOpen size={18} className="text-yellow-dark" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[13px] font-extrabold text-ink">{c.name}</div>
+                        <div className="text-[11px] text-ink-muted mt-0.5">
+                          {c.studentCount} siswa · {c.subjectCount} mapel
+                        </div>
+                      </div>
+                      <span className="text-ink-muted text-sm">›</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ))
+        )}
+      </div>
+    </>
+  );
+}
