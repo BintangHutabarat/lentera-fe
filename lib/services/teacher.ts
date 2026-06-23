@@ -326,12 +326,38 @@ export function getStudentProgress(classSubjectId: string, studentId: string): P
   return apiFetch<StudentProgress>(`/teacher/subjects/${classSubjectId}/students/${studentId}/progress`);
 }
 
-// ── Chapter content ───────────────────────────────────────────────────────────
+// ── Materi (feed datar: teks / foto / pdf) ──────────────────────────────────────
 
-export function updateChapterContent(classSubjectId: string, chapterId: string, content: string): Promise<void> {
-  return apiFetch<void>(`/teacher/subjects/${classSubjectId}/chapters/${chapterId}/content`, {
-    method: "PATCH",
-    body: JSON.stringify({ content }),
+export type MateriType = "TEXT" | "IMAGE" | "PDF";
+
+export interface MateriItem {
+  id: string;
+  type: MateriType;
+  content: string; // teks (TEXT) atau URL file (IMAGE/PDF)
+  fileName: string | null;
+  createdAt: string;
+}
+
+export interface CreateMateriPayload {
+  type: MateriType;
+  content: string;
+  fileName?: string;
+}
+
+export function getTeacherMateri(classSubjectId: string): Promise<MateriItem[]> {
+  return apiFetch<MateriItem[]>(`/teacher/subjects/${classSubjectId}/materi`);
+}
+
+export function createTeacherMateri(classSubjectId: string, payload: CreateMateriPayload): Promise<MateriItem> {
+  return apiFetch<MateriItem>(`/teacher/subjects/${classSubjectId}/materi`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteTeacherMateri(classSubjectId: string, materiId: string): Promise<void> {
+  return apiFetch<void>(`/teacher/subjects/${classSubjectId}/materi/${materiId}`, {
+    method: "DELETE",
   });
 }
 

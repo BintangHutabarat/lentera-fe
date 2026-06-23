@@ -34,6 +34,7 @@ export default function TugasPage() {
   return (
     <>
       <PageTopbar
+        back
         title="Tugas"
         subtitle={loading ? "Memuat..." : `${assignments.length} tugas aktif`}
       />

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { UserCog, Bell, Lock, HelpCircle, LogOut, Loader2, X, Camera } from "lucide-react";
+import { UserCog, Bell, Lock, HelpCircle, LogOut, Loader2, X, Camera, ArrowLeft } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { getStudentProfile, getStudentStats, getStudentBadges, updateAvatar } from "@/lib/services/student";
 import { logout } from "@/lib/services/auth";
@@ -90,9 +90,16 @@ export default function ProfilPage() {
       {/* Hero */}
       <div
         className="relative overflow-hidden px-[18px] pb-14 pt-[26px] text-center"
-        style={{ background: "linear-gradient(135deg,#2B9FD8 0%,#3DD6B5 60%,#7EEFC7 100%)" }}
+        style={{ background: "linear-gradient(135deg,#22A96C 0%,#3DD6B5 60%,#7EEFC7 100%)" }}
       >
         <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/8" />
+        <button
+          onClick={() => router.back()}
+          aria-label="Kembali"
+          className="absolute left-3.5 top-3.5 w-9 h-9 rounded-[10px] flex items-center justify-center text-white bg-white/15 hover:bg-white/25 transition-colors cursor-pointer z-10"
+        >
+          <ArrowLeft size={18} />
+        </button>
         <Avatar
           initials={initials}
           bgColor="rgba(255,255,255,0.22)"
@@ -109,7 +116,7 @@ export default function ProfilPage() {
         <div className="card -mt-7 relative z-10 mb-3.5">
           <div className="grid grid-cols-3 text-center divide-x divide-border">
             {[
-              { val: profile.level,               color: "#2B9FD8", label: "Level" },
+              { val: profile.level,               color: "#22A96C", label: "Level" },
               { val: profile.xp.toLocaleString(), color: "#7a5c00", label: "Total XP" },
               { val: `${stats.attendance}%`,       color: "#3DD6B5", label: "Kehadiran" },
             ].map((item) => (

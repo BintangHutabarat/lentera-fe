@@ -8,7 +8,6 @@ import { isApiError } from "@/lib/api";
 function AdminBuatKelasContent() {
   const router = useRouter();
   const [name, setName] = useState("");
-  const [gradeYear, setGradeYear] = useState("10");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,7 +19,8 @@ function AdminBuatKelasContent() {
     setError(null);
     setSubmitting(true);
     try {
-      const res = await createClass({ name: name.trim(), gradeYear: Number(gradeYear) });
+      // Yayasan ini tidak memakai klasifikasi tingkat; kirim nilai default agar tetap valid di BE.
+      const res = await createClass({ name: name.trim(), gradeYear: 1 });
       router.push(`/admin/kelas/${res.id}`);
     } catch (e) {
       const codeMap: Record<string, string> = {
@@ -49,22 +49,10 @@ function AdminBuatKelasContent() {
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="XII IPA 1"
+            placeholder="Contoh: Tahfidz A"
             className="w-full h-11 rounded-[10px] border border-border bg-surface-card px-3 text-[13px] text-ink outline-none focus:border-brand-blue"
+            autoFocus
           />
-        </div>
-
-        <div>
-          <label className="block text-[11px] font-extrabold text-ink mb-1.5">Tingkat *</label>
-          <select
-            value={gradeYear}
-            onChange={(e) => setGradeYear(e.target.value)}
-            className="w-full h-11 rounded-[10px] border border-border bg-surface-card px-3 text-[13px] text-ink outline-none focus:border-brand-blue cursor-pointer"
-          >
-            <option value="10">10 (Kelas X)</option>
-            <option value="11">11 (Kelas XI)</option>
-            <option value="12">12 (Kelas XII)</option>
-          </select>
         </div>
 
         {error && (

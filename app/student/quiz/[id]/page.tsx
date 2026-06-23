@@ -133,7 +133,7 @@ export default function QuizDetailPage() {
       <div className="min-h-dvh flex flex-col bg-surface-page">
         <div
           className="px-5 pt-10 pb-8 text-center text-white"
-          style={{ background: "linear-gradient(135deg,#2B9FD8 0%,#3DD6B5 60%,#7EEFC7 100%)" }}
+          style={{ background: "linear-gradient(135deg,#22A96C 0%,#3DD6B5 60%,#7EEFC7 100%)" }}
         >
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/20 mb-3">
             <Trophy size={32} className="text-white" />

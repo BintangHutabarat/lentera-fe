@@ -46,7 +46,7 @@ export default function LoginSiswaPage() {
   return (
     <div className="card p-6 sm:p-8">
       <div className="flex items-center gap-2.5 mb-5">
-        <div className="w-10 h-10 rounded-[11px] bg-blue-light flex items-center justify-center">
+        <div className="w-10 h-10 rounded-[11px] bg-teal-light flex items-center justify-center">
           <GraduationCap size={20} className="text-brand-blue" />
         </div>
         <div>

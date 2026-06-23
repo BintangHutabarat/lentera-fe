@@ -16,6 +16,13 @@ const NAV_ITEMS: { href: string; label: string; Icon: LucideIcon }[] = [
 export function TeacherBottomNav() {
   const pathname = usePathname();
 
+  // Focused task pages render their own fixed bottom action bar (Simpan / Tutup
+  // Pertemuan / Simpan Nilai). Hide the nav so it doesn't cover those buttons.
+  const hideNav =
+    /^\/teacher\/kelas\/[^/]+\/(pertemuan|ujian)\/[^/]+/.test(pathname) ||
+    /^\/teacher\/kelas\/[^/]+\/nilai-akhir/.test(pathname);
+  if (hideNav) return null;
+
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 bg-surface-card border-t border-border flex z-20"

@@ -19,6 +19,7 @@ export default function PelajaranPage() {
   return (
     <>
       <PageTopbar
+        back
         title="Mata Pelajaran"
         subtitle={loading ? "Memuat..." : `${subjects.length} Mapel Aktif`}
       />

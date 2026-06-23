@@ -3,8 +3,8 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  ArrowLeft, BookOpen, Users, BookMarked, Plus, Trash2, Pencil,
-  Check, X, ChevronDown, ChevronUp,
+  ArrowLeft, Users, BookMarked, Plus, Trash2, Pencil,
+  Check, X, ChevronDown, ChevronUp, Loader2,
 } from "lucide-react";
 import {
   getAdminClassDetail,
@@ -17,6 +17,7 @@ import {
   deleteAdminAssignment,
   getAdminClassSubjectQuizzes,
   deleteAdminQuiz,
+  deleteUser,
 } from "@/lib/services/admin";
 import { subjectColorMap } from "@/lib/utils";
 import { isApiError } from "@/lib/api";
@@ -38,8 +39,8 @@ export default function AdminKelasDetailPage() {
   // Inline class edit
   const [editMode, setEditMode] = useState(false);
   const [editName, setEditName] = useState("");
-  const [editGradeYear, setEditGradeYear] = useState(10);
   const [saving, setSaving] = useState(false);
+  const [deletingStudentId, setDeletingStudentId] = useState<string | null>(null);
 
   // CS expanded content panel
   const [expandedCsId, setExpandedCsId] = useState<string | null>(null);
@@ -59,7 +60,6 @@ export default function AdminKelasDetailPage() {
       .then((d) => {
         setDetail(d);
         setEditName(d.name);
-        setEditGradeYear(d.gradeYear);
       })
       .catch(() => setError("Gagal memuat data kelas."))
       .finally(() => setLoading(false));
@@ -92,8 +92,8 @@ export default function AdminKelasDetailPage() {
     if (!detail) return;
     setSaving(true);
     try {
-      await updateClass(id, { name: editName.trim(), gradeYear: editGradeYear });
-      setDetail((d) => d ? { ...d, name: editName.trim(), gradeYear: editGradeYear } : d);
+      await updateClass(id, { name: editName.trim() });
+      setDetail((d) => d ? { ...d, name: editName.trim() } : d);
       setEditMode(false);
     } catch {
       setError("Gagal menyimpan perubahan kelas.");
@@ -179,6 +179,20 @@ export default function AdminKelasDetailPage() {
     }
   };
 
+  const handleDeleteStudent = async (student: { id: string; name: string }) => {
+    if (!confirm(`Hapus siswa "${student.name}"? Akun dan seluruh datanya akan dihapus permanen.`)) return;
+    setDeletingStudentId(student.id);
+    setError(null);
+    try {
+      await deleteUser(student.id);
+      setDetail((d) => (d ? { ...d, students: d.students.filter((x) => x.id !== student.id) } : d));
+    } catch (e) {
+      setError(isApiError(e) ? e.message : "Gagal menghapus siswa.");
+    } finally {
+      setDeletingStudentId(null);
+    }
+  };
+
   const handleDeleteClass = async () => {
     if (!confirm(`Hapus kelas "${detail?.name}"? Semua data terkait akan dihapus.`)) return;
     try {
@@ -215,10 +229,12 @@ export default function AdminKelasDetailPage() {
         </button>
         <div className="flex-1 min-w-0">
           <h3 className="text-[14px] font-extrabold text-ink">{detail.name}</h3>
-          <p className="text-[11px] text-ink-muted">Tingkat {detail.gradeYear}</p>
+          <p className="text-[11px] text-ink-muted">
+            {detail.students.length} siswa · {detail.classSubjects.length} mapel
+          </p>
         </div>
         <button
-          onClick={() => { setEditMode((v) => !v); setEditName(detail.name); setEditGradeYear(detail.gradeYear); }}
+          onClick={() => { setEditMode((v) => !v); setEditName(detail.name); }}
           className="w-9 h-9 rounded-[10px] flex items-center justify-center hover:bg-surface-soft transition-colors cursor-pointer"
         >
           <Pencil size={16} className="text-ink-muted" />
@@ -245,18 +261,6 @@ export default function AdminKelasDetailPage() {
                 className="w-full h-10 rounded-[10px] border border-border bg-surface-soft px-3 text-[13px] text-ink outline-none focus:border-brand-blue"
               />
             </div>
-            <div>
-              <label className="text-[11px] text-ink-muted mb-1 block">Tingkat</label>
-              <select
-                value={editGradeYear}
-                onChange={(e) => setEditGradeYear(Number(e.target.value))}
-                className="w-full h-10 rounded-[10px] border border-border bg-surface-soft px-3 text-[13px] text-ink outline-none focus:border-brand-blue"
-              >
-                <option value={10}>10</option>
-                <option value={11}>11</option>
-                <option value={12}>12</option>
-              </select>
-            </div>
             <div className="flex gap-2">
               <button
                 onClick={handleSaveClass}
@@ -276,11 +280,10 @@ export default function AdminKelasDetailPage() {
         )}
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           {[
             { val: detail.students.length, label: "Siswa", Icon: Users, color: "#3DD6B5", bg: "#E3FBF5" },
-            { val: detail.classSubjects.length, label: "Mapel", Icon: BookMarked, color: "#7a5cf1", bg: "#EDF3FF" },
-            { val: detail.gradeYear, label: "Tingkat", Icon: BookOpen, color: "#F5C518", bg: "#FEF9E7" },
+            { val: detail.classSubjects.length, label: "Mapel", Icon: BookMarked, color: "#22A96C", bg: "#E3F5EC" },
           ].map(({ val, label, Icon, color, bg }) => (
             <div key={label} className="card p-3 text-center">
               <div className="w-8 h-8 rounded-[8px] flex items-center justify-center mx-auto mb-1.5" style={{ background: bg }}>
@@ -462,24 +465,41 @@ export default function AdminKelasDetailPage() {
           ) : (
             <div className="card">
               {detail.students.map((s, i) => (
-                <Link
+                <div
                   key={s.id}
-                  href={`/admin/siswa/${s.id}`}
-                  className={`flex items-center gap-3 px-4 py-3 hover:bg-surface-soft transition-colors ${
+                  className={`flex items-center gap-2 px-4 py-3 ${
                     i < detail.students.length - 1 ? "border-b border-surface-soft" : ""
                   }`}
                 >
-                  <div className="w-8 h-8 rounded-full bg-teal-light flex items-center justify-center text-[11px] font-extrabold text-teal-dark flex-shrink-0">
-                    {initials(s.name)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[13px] font-extrabold text-ink truncate">{s.name}</div>
-                    <div className="text-[11px] text-ink-muted">NIS {s.nis}</div>
-                  </div>
-                  {!s.isActive && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-light text-red-dark">Nonaktif</span>
-                  )}
-                </Link>
+                  <Link
+                    href={`/admin/siswa/${s.id}`}
+                    className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-70 transition-opacity"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-teal-light flex items-center justify-center text-[11px] font-extrabold text-teal-dark flex-shrink-0">
+                      {initials(s.name)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] font-extrabold text-ink truncate">{s.name}</div>
+                      <div className="text-[11px] text-ink-muted">NIS {s.nis}</div>
+                    </div>
+                    {!s.isActive && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-light text-red-dark">Nonaktif</span>
+                    )}
+                  </Link>
+                  <button
+                    onClick={() => handleDeleteStudent(s)}
+                    disabled={deletingStudentId === s.id}
+                    aria-label={`Hapus ${s.name}`}
+                    title="Hapus siswa"
+                    className="w-8 h-8 rounded-[8px] flex items-center justify-center text-ink-muted hover:text-red-dark hover:bg-red-light transition-colors cursor-pointer flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {deletingStudentId === s.id ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <Trash2 size={14} />
+                    )}
+                  </button>
+                </div>
               ))}
             </div>
           )}

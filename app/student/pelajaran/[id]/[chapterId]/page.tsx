@@ -10,6 +10,7 @@ function renderMarkdown(md: string): string {
     .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
     .replace(/```[\w]*\n([\s\S]*?)```/g, "<pre><code>$1</code></pre>")
     .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, '<img alt="$1" src="$2" loading="lazy" />')
     .replace(/^### (.+)$/gm, "<h3>$1</h3>")
     .replace(/^## (.+)$/gm, "<h2>$1</h2>")
     .replace(/^# (.+)$/gm, "<h1>$1</h1>")
@@ -143,6 +144,7 @@ export default function ChapterReaderPage() {
         .prose-content h2 { font-size: 1.1rem; font-weight: 800; margin: 1rem 0 0.5rem; color: #1C3B4A; }
         .prose-content h3 { font-size: 0.95rem; font-weight: 700; margin: 0.8rem 0 0.4rem; color: #1C3B4A; }
         .prose-content p { margin: 0.5rem 0; }
+        .prose-content img { display: block; max-width: 100%; height: auto; border-radius: 10px; margin: 0.9rem 0; }
         .prose-content ul { list-style: disc; padding-left: 1.4rem; margin: 0.5rem 0; }
         .prose-content ol { list-style: decimal; padding-left: 1.4rem; margin: 0.5rem 0; }
         .prose-content li { margin: 0.25rem 0; }

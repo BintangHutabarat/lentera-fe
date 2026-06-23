@@ -1,12 +1,12 @@
 {
-  "name": "Lentera LMS",
-  "short_name": "Lentera",
-  "description": "Platform pembelajaran interaktif untuk siswa dan guru SMA",
+  "name": "Yayasan Darul Itqon Al Hakim",
+  "short_name": "YDIAH",
+  "description": "Platform pembelajaran digital Yayasan Darul Itqon Al Hakim untuk santri, guru, dan kepala sekolah",
   "start_url": "/student/beranda",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#F6FBFD",
-  "theme_color": "#2B9FD8",
+  "background_color": "#F2FAF6",
+  "theme_color": "#22A96C",
   "lang": "id",
   "categories": ["education"],
   "icons": [
