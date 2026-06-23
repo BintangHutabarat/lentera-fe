@@ -17,13 +17,6 @@ export default function AdminKelasPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const grouped = classes.reduce<Record<number, AdminClass[]>>((acc, c) => {
-    const yr = c.gradeYear;
-    if (!acc[yr]) acc[yr] = [];
-    acc[yr].push(c);
-    return acc;
-  }, {});
-
   return (
     <>
       <PageTopbar
@@ -51,35 +44,28 @@ export default function AdminKelasPage() {
             <p className="text-[11px] text-ink-muted mt-1">Tambah kelas baru dengan tombol + di atas.</p>
           </div>
         ) : (
-          Object.entries(grouped)
-            .sort(([a], [b]) => Number(a) - Number(b))
-            .map(([gradeYear, list]) => (
-              <div key={gradeYear}>
-                <h3 className="text-[13px] font-extrabold text-ink-muted mb-2">Tingkat {gradeYear}</h3>
-                <div className="card">
-                  {list.map((c, i) => (
-                    <Link
-                      key={c.id}
-                      href={`/admin/kelas/${c.id}`}
-                      className={`flex items-center gap-3 px-4 py-3 hover:bg-surface-soft transition-colors ${
-                        i < list.length - 1 ? "border-b border-surface-soft" : ""
-                      }`}
-                    >
-                      <div className="w-10 h-10 rounded-[10px] bg-yellow-light flex items-center justify-center flex-shrink-0">
-                        <BookOpen size={18} className="text-yellow-dark" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[13px] font-extrabold text-ink">{c.name}</div>
-                        <div className="text-[11px] text-ink-muted mt-0.5">
-                          {c.studentCount} siswa · {c.subjectCount} mapel
-                        </div>
-                      </div>
-                      <span className="text-ink-muted text-sm">›</span>
-                    </Link>
-                  ))}
+          <div className="card">
+            {classes.map((c, i) => (
+              <Link
+                key={c.id}
+                href={`/admin/kelas/${c.id}`}
+                className={`flex items-center gap-3 px-4 py-3 hover:bg-surface-soft transition-colors ${
+                  i < classes.length - 1 ? "border-b border-surface-soft" : ""
+                }`}
+              >
+                <div className="w-10 h-10 rounded-[10px] bg-yellow-light flex items-center justify-center flex-shrink-0">
+                  <BookOpen size={18} className="text-yellow-dark" />
                 </div>
-              </div>
-            ))
+                <div className="flex-1 min-w-0">
+                  <div className="text-[13px] font-extrabold text-ink">{c.name}</div>
+                  <div className="text-[11px] text-ink-muted mt-0.5">
+                    {c.studentCount} siswa · {c.subjectCount} mapel
+                  </div>
+                </div>
+                <span className="text-ink-muted text-sm">›</span>
+              </Link>
+            ))}
+          </div>
         )}
       </div>
     </>

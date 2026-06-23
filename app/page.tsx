@@ -1,8 +1,9 @@
 import Link from "next/link";
 import {
-  Lightbulb, BookOpen, Brain, ClipboardList, MessageCircle,
+  BookOpen, Brain, ClipboardList, MessageCircle,
   Trophy, ArrowRight, Mail,
 } from "lucide-react";
+import { BrandLogo, SCHOOL_NAME } from "@/components/ui/BrandLogo";
 
 // Lucide v1.14 doesn't ship brand-trademark icons (Instagram/YouTube/X) —
 // inline minimal SVGs so the footer doesn't need an extra dep.
@@ -34,10 +35,10 @@ function IconX(props: React.SVGProps<SVGSVGElement>) {
 }
 
 const FEATURE_BADGES = [
-  { Icon: BookOpen,      label: "Materi",  bg: "#E6F6FD", color: "#1a6a9a" },
+  { Icon: BookOpen,      label: "Materi",  bg: "#E0FAF6", color: "#1a9c87" },
   { Icon: ClipboardList, label: "Tugas",   bg: "#FEF9E7", color: "#7a5c00" },
-  { Icon: Brain,         label: "Quiz",    bg: "#E3FBF5", color: "#1a9c87" },
-  { Icon: MessageCircle, label: "Forum",   bg: "#EDF3FF", color: "#3d5af1" },
+  { Icon: Brain,         label: "Quiz",    bg: "#E3F5EC", color: "#22A96C" },
+  { Icon: MessageCircle, label: "Forum",   bg: "#E0FBF0", color: "#1a8a75" },
 ];
 
 export default function LandingPage() {
@@ -46,15 +47,7 @@ export default function LandingPage() {
       {/* ── Top bar ── */}
       <header className="sticky top-0 z-20 bg-surface-card/85 backdrop-blur border-b border-border">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div
-              className="w-9 h-9 rounded-[10px] flex items-center justify-center"
-              style={{ background: "var(--brand-grad)" }}
-            >
-              <Lightbulb size={18} className="text-white" fill="rgba(255,255,255,0.9)" />
-            </div>
-            <span className="text-[17px] font-extrabold text-ink tracking-tight">Lentera</span>
-          </div>
+          <BrandLogo size={38} />
           <nav className="hidden sm:flex items-center gap-1">
             <Link
               href="/auth/login/siswa"
@@ -85,7 +78,7 @@ export default function LandingPage() {
           <div className="text-center md:text-left">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-light text-teal-dark text-[11px] font-extrabold">
               <span className="w-1.5 h-1.5 rounded-full bg-brand-teal" />
-              LMS untuk SMA Indonesia
+              Sistem Pembelajaran Digital
             </span>
 
             <h1 className="mt-4 text-[30px] sm:text-[38px] md:text-[44px] leading-[1.1] font-extrabold text-ink tracking-tight">
@@ -96,8 +89,9 @@ export default function LandingPage() {
             </h1>
 
             <p className="mt-4 text-[14px] sm:text-[15px] text-ink-secondary leading-relaxed max-w-xl mx-auto md:mx-0">
-              Tugas, quiz, materi, dan forum diskusi dalam satu aplikasi mobile-first
-              yang ringan, ramah kuota, dan didesain khusus untuk siswa SMA.
+              Materi, tugas, quiz, absensi, dan forum diskusi dalam satu aplikasi
+              mobile-first yang ringan dan ramah kuota — untuk seluruh santri dan
+              guru {SCHOOL_NAME}.
             </p>
 
             {/* CTAs */}
@@ -128,7 +122,7 @@ export default function LandingPage() {
               className="absolute inset-0 rounded-[28px] opacity-[0.18] blur-2xl"
               style={{ background: "var(--brand-grad)" }}
             />
-            <div className="relative card p-6 shadow-[0_30px_60px_-20px_rgba(43,159,216,0.35)]">
+            <div className="relative card p-6 shadow-[0_30px_60px_-20px_rgba(34,169,108,0.35)]">
               {/* Hero card: faux dashboard preview */}
               <div
                 className="rounded-[14px] p-4 text-white"
@@ -184,17 +178,10 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8 sm:py-10">
           <div className="grid sm:grid-cols-3 gap-6 sm:gap-8">
             <div>
-              <div className="flex items-center gap-2 mb-2">
-                <div
-                  className="w-8 h-8 rounded-[9px] flex items-center justify-center"
-                  style={{ background: "var(--brand-grad)" }}
-                >
-                  <Lightbulb size={15} className="text-white" fill="rgba(255,255,255,0.9)" />
-                </div>
-                <span className="text-[15px] font-extrabold text-ink">Lentera</span>
-              </div>
+              <BrandLogo size={34} className="mb-2.5" />
               <p className="text-[12px] text-ink-muted leading-relaxed max-w-xs">
-                Platform pembelajaran interaktif berbahasa Indonesia untuk siswa SMA.
+                Platform pembelajaran digital resmi {SCHOOL_NAME} untuk santri, guru,
+                dan kepala sekolah.
               </p>
             </div>
 
@@ -205,9 +192,9 @@ export default function LandingPage() {
               <ul className="flex flex-col gap-1.5 text-[12px] text-ink-secondary">
                 <li className="flex items-center gap-1.5">
                   <Mail size={12} className="text-brand-blue" />
-                  halo@lentera.sch.id
+                  info@ydiah.sch.id
                 </li>
-                <li>SMA Negeri 1 Jakarta</li>
+                <li>{SCHOOL_NAME}</li>
                 <li className="text-ink-muted">Senin – Jumat, 08.00 – 16.00</li>
               </ul>
             </div>
@@ -237,7 +224,7 @@ export default function LandingPage() {
 
           <div className="mt-8 pt-5 border-t border-surface-soft flex flex-col sm:flex-row items-center justify-between gap-2">
             <p className="text-[11px] text-ink-muted">
-              © {new Date().getFullYear()} Lentera. Hak cipta dilindungi.
+              © {new Date().getFullYear()} {SCHOOL_NAME}. Hak cipta dilindungi.
             </p>
             <div className="flex gap-4 text-[11px] text-ink-muted">
               <a href="#" className="hover:text-brand-blue transition-colors">Kebijakan Privasi</a>

@@ -90,6 +90,7 @@ export default function ForumPage() {
   return (
     <>
       <PageTopbar
+        back
         title="Forum Diskusi"
         subtitle="Diskusi bersama"
         right={
@@ -172,7 +173,7 @@ export default function ForumPage() {
                         post.author.role === "TEACHER" ? (
                           <span
                             className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white"
-                            style={{ background: "linear-gradient(135deg,#2B9FD8,#3DD6B5)" }}
+                            style={{ background: "linear-gradient(135deg,#22A96C,#3DD6B5)" }}
                           >
                             Guru
                           </span>

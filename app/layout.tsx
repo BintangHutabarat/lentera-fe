@@ -2,8 +2,8 @@ import type { Metadata, Viewport } from "next";
 import "@/app/globals.css";
 
 export const metadata: Metadata = {
-  title: "Lentera LMS",
-  description: "Platform pembelajaran interaktif untuk siswa dan guru",
+  title: "Yayasan Darul Itqon Al Hakim",
+  description: "Platform pembelajaran digital Yayasan Darul Itqon Al Hakim untuk santri, guru, dan kepala sekolah",
   manifest: "/manifest.json",
 };
 
@@ -11,7 +11,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#2B9FD8",
+  themeColor: "#22A96C",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

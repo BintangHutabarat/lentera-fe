@@ -1,27 +1,32 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Award, Bell, BookOpen, Brain, CalendarCheck, ChevronRight, ClipboardList, Loader2, Pencil, ScrollText, Users, X } from "lucide-react";
+import { ArrowLeft, Award, Bell, BookOpen, Brain, CalendarCheck, ChevronRight, ClipboardList, FileText, ImagePlus, Loader2, Plus, ScrollText, Trash2, Type, Users, X } from "lucide-react";
 import {
   getTeacherClassSubjects,
   getClassSubjectStudents,
   announceToClass,
-  updateChapterContent,
+  getTeacherMateri,
+  createTeacherMateri,
+  deleteTeacherMateri,
 } from "@/lib/services/teacher";
-import { getAdminChapters } from "@/lib/services/admin";
+import { presignUpload, uploadFile } from "@/lib/services/uploads";
+import { isApiError } from "@/lib/api";
 import { Avatar } from "@/components/ui/Avatar";
 import { subjectColorMap } from "@/lib/utils";
 import { subjectIcons } from "@/lib/icons";
-import type { TeacherClassSubject, TeacherStudent } from "@/lib/services/teacher";
-import type { AdminChapter } from "@/lib/services/admin";
+import type { TeacherClassSubject, TeacherStudent, MateriItem, MateriType } from "@/lib/services/teacher";
+
+const ALLOWED_IMG_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const MAX_BYTES = 10 * 1024 * 1024;
 
 export default function TeacherKelasDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [classSubject, setClassSubject] = useState<TeacherClassSubject | null>(null);
   const [students, setStudents] = useState<TeacherStudent[]>([]);
-  const [chapters, setChapters] = useState<AdminChapter[]>([]);
+  const [materi, setMateri] = useState<MateriItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,10 +36,15 @@ export default function TeacherKelasDetailPage() {
   const [announceBody, setAnnounceBody] = useState("");
   const [sendingAnnounce, setSendingAnnounce] = useState(false);
 
-  // Chapter editor modal
-  const [editingChapter, setEditingChapter] = useState<AdminChapter | null>(null);
-  const [chapterContent, setChapterContent] = useState("");
-  const [savingChapter, setSavingChapter] = useState(false);
+  // Materi
+  const [composingText, setComposingText] = useState(false);
+  const [textContent, setTextContent] = useState("");
+  const [savingText, setSavingText] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [materiError, setMateriError] = useState<string | null>(null);
+  const [deletingMateriId, setDeletingMateriId] = useState<string | null>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     Promise.all([getTeacherClassSubjects(), getClassSubjectStudents(id)])
@@ -44,14 +54,14 @@ export default function TeacherKelasDetailPage() {
         setClassSubject(found);
         setStudents(studs);
         if (found) {
-          getAdminChapters(found.subject.id)
-            .then(setChapters)
-            .catch(() => {});
+          getTeacherMateri(id).then(setMateri).catch(() => {});
         }
       })
       .catch((e) => setError(e?.message ?? "Gagal memuat data."))
       .finally(() => setLoading(false));
   }, [id]);
+
+  const reloadMateri = () => getTeacherMateri(id).then(setMateri).catch(() => {});
 
   if (loading) {
     return (
@@ -87,17 +97,64 @@ export default function TeacherKelasDetailPage() {
     setSendingAnnounce(false);
   };
 
-  const handleSaveChapter = async () => {
-    if (!editingChapter || savingChapter) return;
-    setSavingChapter(true);
+  const handleSaveText = async () => {
+    const content = textContent.trim();
+    if (!content || savingText) return;
+    setSavingText(true);
+    setMateriError(null);
     try {
-      await updateChapterContent(id, editingChapter.id, chapterContent);
-      setEditingChapter(null);
+      await createTeacherMateri(id, { type: "TEXT", content });
+      setTextContent("");
+      setComposingText(false);
+      await reloadMateri();
+    } catch (err) {
+      setMateriError(isApiError(err) ? err.message : "Gagal menyimpan materi.");
+    }
+    setSavingText(false);
+  };
+
+  const handleUpload = async (file: File, type: MateriType) => {
+    if (!file || uploading) return;
+    setMateriError(null);
+    if (type === "IMAGE" && !ALLOWED_IMG_TYPES.includes(file.type)) {
+      setMateriError("Foto harus JPG, PNG, atau WebP.");
+      return;
+    }
+    if (type === "PDF" && file.type !== "application/pdf") {
+      setMateriError("File harus PDF.");
+      return;
+    }
+    if (file.size > MAX_BYTES) {
+      setMateriError("Ukuran file maks 10 MB.");
+      return;
+    }
+    setUploading(true);
+    try {
+      const res = await presignUpload("materi", file.name, file.size, file.type);
+      await uploadFile(res.uploadUrl, file);
+      const url = res.fileUrl ?? res.uploadUrl.split("?")[0];
+      await createTeacherMateri(id, { type, content: url, fileName: file.name });
+      await reloadMateri();
+    } catch (err) {
+      setMateriError(isApiError(err) ? err.message : "Gagal mengunggah materi.");
+    }
+    setUploading(false);
+  };
+
+  const handleDeleteMateri = async (item: MateriItem) => {
+    if (deletingMateriId) return;
+    if (!confirm("Hapus materi ini?")) return;
+    setDeletingMateriId(item.id);
+    try {
+      await deleteTeacherMateri(id, item.id);
+      setMateri((prev) => prev.filter((x) => x.id !== item.id));
     } catch {
       /* silent */
     }
-    setSavingChapter(false);
+    setDeletingMateriId(null);
   };
+
+  const openTextCompose = () => { setTextContent(""); setMateriError(null); setComposingText(true); };
 
   return (
     <>
@@ -204,35 +261,126 @@ export default function TeacherKelasDetailPage() {
           </button>
         </div>
 
-        {/* Chapters */}
-        {chapters.length > 0 && (
-          <>
-            <h3 className="text-[14px] font-extrabold text-ink mb-2.5 flex items-center gap-1.5">
-              <BookOpen size={15} /> Materi ({chapters.length} bab)
-            </h3>
-            <div className="card mb-3.5">
-              {chapters.map((ch, i) => (
-                <button
-                  key={ch.id}
-                  onClick={() => { setEditingChapter(ch); setChapterContent(""); }}
-                  className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-surface-soft transition-colors cursor-pointer ${
-                    i < chapters.length - 1 ? "border-b border-surface-soft" : ""
-                  }`}
-                >
-                  <div className="w-6 h-6 rounded-full bg-surface-soft text-[10px] font-extrabold text-ink-muted flex items-center justify-center flex-shrink-0">
-                    {ch.order}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[12px] font-bold text-ink truncate">{ch.title}</div>
-                    {ch.hasContent && (
-                      <div className="text-[10px] text-brand-teal font-bold mt-0.5">Ada konten</div>
-                    )}
-                  </div>
-                  <Pencil size={13} className="text-ink-muted flex-shrink-0" />
-                </button>
-              ))}
+        {/* Materi feed */}
+        <h3 className="text-[14px] font-extrabold text-ink mb-2.5 flex items-center gap-1.5">
+          <BookOpen size={15} /> Materi ({materi.length})
+        </h3>
+
+        {/* Add actions */}
+        <div className="grid grid-cols-3 gap-2.5 mb-2.5">
+          <button
+            onClick={openTextCompose}
+            disabled={uploading}
+            className="card p-3 text-center cursor-pointer hover:border-brand-teal transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Type size={18} className="mx-auto mb-1.5 text-brand-blue" />
+            <div className="text-[11px] font-extrabold text-ink">Teks</div>
+          </button>
+          <button
+            onClick={() => imageInputRef.current?.click()}
+            disabled={uploading}
+            className="card p-3 text-center cursor-pointer hover:border-brand-teal transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ImagePlus size={18} className="mx-auto mb-1.5 text-brand-blue" />
+            <div className="text-[11px] font-extrabold text-ink">Foto</div>
+          </button>
+          <button
+            onClick={() => pdfInputRef.current?.click()}
+            disabled={uploading}
+            className="card p-3 text-center cursor-pointer hover:border-brand-teal transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FileText size={18} className="mx-auto mb-1.5 text-brand-blue" />
+            <div className="text-[11px] font-extrabold text-ink">PDF</div>
+          </button>
+        </div>
+
+        <input
+          ref={imageInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f, "IMAGE"); e.target.value = ""; }}
+        />
+        <input
+          ref={pdfInputRef}
+          type="file"
+          accept="application/pdf"
+          className="hidden"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f, "PDF"); e.target.value = ""; }}
+        />
+
+        {uploading && (
+          <div className="flex items-center gap-2 text-[12px] text-ink-muted bg-surface-soft rounded-[10px] px-3 py-2.5 mb-2.5">
+            <Loader2 size={14} className="animate-spin" /> Mengunggah materi...
+          </div>
+        )}
+        {materiError && (
+          <div className="text-[11px] font-bold text-red-dark bg-red-light rounded-[8px] px-2.5 py-2 mb-2.5">
+            {materiError}
+          </div>
+        )}
+
+        {materi.length === 0 ? (
+          <div className="card p-5 mb-3.5 flex flex-col items-center text-center gap-1.5">
+            <div className="w-11 h-11 rounded-full bg-surface-soft flex items-center justify-center mb-1">
+              <BookOpen size={20} className="text-ink-muted" />
             </div>
-          </>
+            <p className="text-[13px] font-bold text-ink">Belum ada materi</p>
+            <p className="text-[11px] text-ink-muted">Tambahkan teks, foto, atau PDF untuk dilihat siswa.</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2.5 mb-3.5">
+            {materi.map((item) => (
+              <div key={item.id} className="card p-3.5 flex gap-3">
+                <div className="flex-1 min-w-0">
+                  {item.type === "TEXT" ? (
+                    <p className="text-[13px] text-ink leading-relaxed whitespace-pre-wrap break-words">{item.content}</p>
+                  ) : item.type === "IMAGE" ? (
+                    <a href={item.content} target="_blank" rel="noopener noreferrer" className="block">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={item.content}
+                        alt={item.fileName ?? "Foto materi"}
+                        loading="lazy"
+                        className="w-full max-h-60 object-cover rounded-[10px]"
+                      />
+                      {item.fileName && (
+                        <div className="text-[10px] text-ink-muted mt-1.5 truncate">{item.fileName}</div>
+                      )}
+                    </a>
+                  ) : (
+                    <a
+                      href={item.content}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+                    >
+                      <div className="w-10 h-10 rounded-[10px] bg-red-light flex items-center justify-center flex-shrink-0">
+                        <FileText size={18} className="text-red-dark" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[12px] font-bold text-ink truncate">{item.fileName ?? "Dokumen PDF"}</div>
+                        <div className="text-[10px] text-ink-muted">Ketuk untuk membuka</div>
+                      </div>
+                    </a>
+                  )}
+                </div>
+                <button
+                  onClick={() => handleDeleteMateri(item)}
+                  disabled={deletingMateriId === item.id}
+                  aria-label="Hapus materi"
+                  title="Hapus materi"
+                  className="w-8 h-8 rounded-[8px] flex items-center justify-center text-ink-muted hover:text-red-dark hover:bg-red-light transition-colors cursor-pointer flex-shrink-0 self-start disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {deletingMateriId === item.id ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <Trash2 size={14} />
+                  )}
+                </button>
+              </div>
+            ))}
+          </div>
         )}
 
         <h3 className="text-[14px] font-extrabold text-ink mb-2.5">Daftar Siswa ({students.length})</h3>
@@ -311,38 +459,40 @@ export default function TeacherKelasDetailPage() {
         </div>
       )}
 
-      {/* Chapter content editor modal */}
-      {editingChapter && (
-        <div className="fixed inset-0 bg-black/50 z-40 flex items-end" onClick={() => setEditingChapter(null)}>
+      {/* Text materi compose modal */}
+      {composingText && (
+        <div className="fixed inset-0 bg-black/50 z-40 flex items-end" onClick={() => setComposingText(false)}>
           <div
             className="w-full bg-surface-card rounded-t-[20px] p-5 flex flex-col gap-3.5"
             style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <div className="flex-1 min-w-0 mr-3">
-                <h3 className="text-[15px] font-extrabold text-ink truncate">{editingChapter.title}</h3>
-                <p className="text-[11px] text-ink-muted">Edit konten materi (Markdown)</p>
-              </div>
-              <button onClick={() => setEditingChapter(null)} className="w-7 h-7 rounded-full bg-surface-soft flex items-center justify-center cursor-pointer flex-shrink-0">
+              <h3 className="text-[15px] font-extrabold text-ink">Tambah Materi Teks</h3>
+              <button onClick={() => setComposingText(false)} className="w-7 h-7 rounded-full bg-surface-soft flex items-center justify-center cursor-pointer">
                 <X size={14} className="text-ink-muted" />
               </button>
             </div>
             <textarea
               autoFocus
-              value={chapterContent}
-              onChange={(e) => setChapterContent(e.target.value)}
-              placeholder="# Judul Bab&#10;&#10;Tuliskan konten materi di sini (Markdown)..."
-              rows={8}
-              className="w-full resize-none bg-surface-soft rounded-[10px] px-3.5 py-3 text-[13px] text-ink font-mono placeholder:text-ink-muted outline-none focus:ring-2 focus:ring-brand-blue/20 transition-all leading-relaxed"
+              value={textContent}
+              onChange={(e) => setTextContent(e.target.value)}
+              placeholder="Tuliskan materi untuk siswa..."
+              rows={6}
+              className="w-full resize-none bg-surface-soft rounded-[10px] px-3.5 py-3 text-[13px] text-ink placeholder:text-ink-muted outline-none focus:ring-2 focus:ring-brand-blue/20 transition-all leading-relaxed"
             />
+            {materiError && (
+              <p className="text-[11px] font-bold text-red-dark bg-red-light rounded-[8px] px-2.5 py-2 -mt-1">
+                {materiError}
+              </p>
+            )}
             <button
-              onClick={handleSaveChapter}
-              disabled={savingChapter}
+              onClick={handleSaveText}
+              disabled={!textContent.trim() || savingText}
               className="h-12 rounded-[12px] bg-brand-blue text-white text-[14px] font-extrabold flex items-center justify-center gap-2 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
             >
-              {savingChapter ? <Loader2 size={16} className="animate-spin" /> : <Pencil size={16} />}
-              {savingChapter ? "Menyimpan..." : "Simpan Konten"}
+              {savingText ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
+              {savingText ? "Menyimpan..." : "Posting Materi"}
             </button>
           </div>
         </div>

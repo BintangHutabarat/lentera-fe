@@ -49,7 +49,7 @@ export default function TeacherBerandaPage() {
     <>
       <div
         className="relative overflow-hidden px-[18px] pb-6 pt-[18px]"
-        style={{ background: "linear-gradient(135deg,#2B9FD8 0%,#3DD6B5 60%,#7EEFC7 100%)" }}
+        style={{ background: "linear-gradient(135deg,#22A96C 0%,#3DD6B5 60%,#7EEFC7 100%)" }}
       >
         <div className="absolute -top-12 -right-10 w-44 h-44 rounded-full bg-white/10" />
         <div className="absolute -bottom-12 left-[5%] w-36 h-36 rounded-full bg-white/7" />

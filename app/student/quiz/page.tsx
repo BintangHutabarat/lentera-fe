@@ -44,12 +44,12 @@ export default function QuizPage() {
 
   return (
     <>
-      <PageTopbar title="Quiz & Latihan" subtitle="Asah kemampuan kamu!" />
+      <PageTopbar back title="Quiz & Latihan" subtitle="Asah kemampuan kamu!" />
       <div className="px-3.5 pt-3.5">
 
         <div
           className="relative overflow-hidden rounded-card p-[18px] mb-3.5"
-          style={{ background: "linear-gradient(135deg,#2B9FD8 0%,#3DD6B5 60%,#7EEFC7 100%)" }}
+          style={{ background: "linear-gradient(135deg,#22A96C 0%,#3DD6B5 60%,#7EEFC7 100%)" }}
         >
           <div className="absolute right-3.5 top-1/2 -translate-y-1/2 opacity-20 pointer-events-none">
             <Gamepad2 size={52} className="text-white" />

@@ -14,11 +14,11 @@ import { timeAgo } from "@/lib/utils";
 import type { Notification, NotificationType } from "@/lib/services/notifications";
 
 const TYPE_META: Record<NotificationType, { Icon: React.ComponentType<{ size?: number; className?: string; color?: string }>; bg: string; color: string }> = {
-  ASSIGNMENT_NEW:    { Icon: ClipboardList, bg: "#EDF3FF", color: "#4361EE" },
+  ASSIGNMENT_NEW:    { Icon: ClipboardList, bg: "#EDF3FF", color: "#1a7a45" },
   ASSIGNMENT_GRADED: { Icon: ClipboardList, bg: "#E3FBF5", color: "#1a9c87" },
   ASSIGNMENT_DUE_SOON: { Icon: Clock,       bg: "#FEF9E7", color: "#c09000" },
-  QUIZ_NEW:          { Icon: Brain,         bg: "#EDF3FF", color: "#4361EE" },
-  FORUM_REPLY:       { Icon: MessageCircle, bg: "#E3FBF5", color: "#2B9FD8" },
+  QUIZ_NEW:          { Icon: Brain,         bg: "#EDF3FF", color: "#1a7a45" },
+  FORUM_REPLY:       { Icon: MessageCircle, bg: "#E3FBF5", color: "#22A96C" },
   ANNOUNCEMENT:      { Icon: Megaphone,     bg: "#FEF9E7", color: "#c09000" },
 };
 

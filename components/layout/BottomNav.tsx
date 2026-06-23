@@ -19,6 +19,8 @@ export function BottomNav() {
 
   // Quiz session is full-screen: /student/quiz/[id] has its own bottom action bar.
   if (/^\/student\/quiz\/[^/]+/.test(pathname)) return null;
+  // Forum detail has its own fixed reply input bar; hide nav so it isn't covered.
+  if (/^\/student\/forum\/(?!tersimpan)[^/]+/.test(pathname)) return null;
 
   return (
     <nav

@@ -1,10 +1,12 @@
 import { apiFetch } from "@/lib/api";
 
-export type UploadPurpose = "assignment_submission" | "avatar";
+export type UploadPurpose = "assignment_submission" | "avatar" | "chapter_content" | "materi";
 
 export interface PresignResponse {
   uploadUrl: string;
   fileKey: string;
+  /** Public URL of the stored file (use this as the saved content URL). */
+  fileUrl?: string;
   expiresInSeconds: number;
 }
 

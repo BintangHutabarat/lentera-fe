@@ -60,7 +60,7 @@ export default function TeacherProfilPage() {
     <>
       <div
         className="relative overflow-hidden px-[18px] pb-14 pt-[26px] text-center"
-        style={{ background: "linear-gradient(135deg,#2B9FD8 0%,#3DD6B5 60%,#7EEFC7 100%)" }}
+        style={{ background: "linear-gradient(135deg,#22A96C 0%,#3DD6B5 60%,#7EEFC7 100%)" }}
       >
         <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/8" />
         <Avatar
@@ -80,7 +80,7 @@ export default function TeacherProfilPage() {
         <div className="card -mt-7 relative z-10 mb-3.5">
           <div className="grid grid-cols-2 text-center divide-x divide-border">
             <div className="py-3">
-              <div className="text-[13px] font-extrabold truncate px-2" style={{ color: "#2B9FD8" }}>
+              <div className="text-[13px] font-extrabold truncate px-2" style={{ color: "#22A96C" }}>
                 {profile?.nip ?? "—"}
               </div>
               <div className="text-[10px] text-ink-muted mt-0.5">NIP</div>

@@ -39,7 +39,7 @@ export default function AdminProfilPage() {
     <>
       <div
         className="relative overflow-hidden px-[18px] pb-14 pt-[26px] text-center"
-        style={{ background: "linear-gradient(135deg,#4361EE 0%,#2B9FD8 60%,#3DD6B5 100%)" }}
+        style={{ background: "linear-gradient(135deg,#1a7a45 0%,#22A96C 60%,#3DD6B5 100%)" }}
       >
         <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/8" />
         <Avatar
@@ -58,8 +58,8 @@ export default function AdminProfilPage() {
         <div className="card -mt-7 relative z-10 mb-3.5">
           <div className="grid grid-cols-2 text-center divide-x divide-border">
             {[
-              { val: me?.scope ?? "SCHOOL", color: "#4361EE", label: "Scope" },
-              { val: "Admin", color: "#2B9FD8", label: "Role" },
+              { val: me?.scope ?? "SCHOOL", color: "#1a7a45", label: "Scope" },
+              { val: "Admin", color: "#22A96C", label: "Role" },
             ].map((item) => (
               <div key={item.label} className="py-3">
                 <div className="text-[13px] font-extrabold truncate px-2" style={{ color: item.color }}>{item.val}</div>
@@ -74,7 +74,7 @@ export default function AdminProfilPage() {
         <div className="card mb-3.5">
           <div className="flex items-center gap-3 px-4 py-3 border-b border-surface-soft">
             <div className="w-[34px] h-[34px] rounded-[9px] bg-[#EDF3FF] flex items-center justify-center flex-shrink-0">
-              <Mail size={16} style={{ color: "#4361EE" }} />
+              <Mail size={16} style={{ color: "#1a7a45" }} />
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-[10px] text-ink-muted">Email</div>

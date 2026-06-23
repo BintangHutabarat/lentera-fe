@@ -47,7 +47,7 @@ export default function AdminBerandaPage() {
     <>
       <div
         className="relative overflow-hidden px-[18px] pb-6 pt-[18px]"
-        style={{ background: "linear-gradient(135deg,#4361EE 0%,#2B9FD8 60%,#3DD6B5 100%)" }}
+        style={{ background: "linear-gradient(135deg,#1a7a45 0%,#22A96C 60%,#3DD6B5 100%)" }}
       >
         <div className="absolute -top-12 -right-10 w-44 h-44 rounded-full bg-white/10" />
         <div className="absolute -bottom-12 left-[5%] w-36 h-36 rounded-full bg-white/7" />
@@ -97,7 +97,7 @@ export default function AdminBerandaPage() {
         {/* Profile summary card */}
         {!loading && me && (
           <div className="card p-4 mb-3.5 flex items-center gap-3">
-            <div className="w-11 h-11 rounded-full bg-[#EDF3FF] flex items-center justify-center text-[15px] font-extrabold text-[#4361EE] flex-shrink-0">
+            <div className="w-11 h-11 rounded-full bg-[#EDF3FF] flex items-center justify-center text-[15px] font-extrabold text-[#1a7a45] flex-shrink-0">
               {initials}
             </div>
             <div className="flex-1 min-w-0">
