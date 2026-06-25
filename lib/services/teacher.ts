@@ -326,26 +326,45 @@ export function getStudentProgress(classSubjectId: string, studentId: string): P
   return apiFetch<StudentProgress>(`/teacher/subjects/${classSubjectId}/students/${studentId}/progress`);
 }
 
-// ── Materi (feed datar: teks / foto / pdf) ──────────────────────────────────────
+// ── Materi (CMS: judul + isi rich-text + lampiran) ───────────────────────────
 
-export type MateriType = "TEXT" | "IMAGE" | "PDF";
+export type MateriType = "IMAGE" | "PDF";
+
+export interface MateriAttachment {
+  id?: string;
+  type: MateriType;
+  content: string; // base64 data URL (kirim) / URL (baca)
+  fileName: string;
+}
+
+export interface MateriListItem {
+  id: string;
+  title: string;
+  excerpt: string;
+  attachmentCount: number;
+  createdAt: string;
+}
 
 export interface MateriItem {
   id: string;
-  type: MateriType;
-  content: string; // teks (TEXT) atau URL file (IMAGE/PDF)
-  fileName: string | null;
+  title: string;
+  body: string; // HTML
+  attachments: MateriAttachment[];
   createdAt: string;
 }
 
 export interface CreateMateriPayload {
-  type: MateriType;
-  content: string;
-  fileName?: string;
+  title: string;
+  body: string;
+  attachments: { type: MateriType; content: string; fileName: string }[];
 }
 
-export function getTeacherMateri(classSubjectId: string): Promise<MateriItem[]> {
-  return apiFetch<MateriItem[]>(`/teacher/subjects/${classSubjectId}/materi`);
+export function getTeacherMateri(classSubjectId: string): Promise<MateriListItem[]> {
+  return apiFetch<MateriListItem[]>(`/teacher/subjects/${classSubjectId}/materi`);
+}
+
+export function getTeacherMateriDetail(classSubjectId: string, materiId: string): Promise<MateriItem> {
+  return apiFetch<MateriItem>(`/teacher/subjects/${classSubjectId}/materi/${materiId}`);
 }
 
 export function createTeacherMateri(classSubjectId: string, payload: CreateMateriPayload): Promise<MateriItem> {
@@ -549,17 +568,15 @@ export interface FinalGradesResponse {
   classSubjectId: string;
   academicYearId: string;
   academicYearLabel: string;
-  semester: number;
   entries: FinalGradeEntry[];
 }
 
 export function getFinalGrades(
   classSubjectId: string,
-  academicYearId: string,
-  semester: 1 | 2
+  academicYearId: string
 ): Promise<FinalGradesResponse> {
   return apiFetch<FinalGradesResponse>(
-    `/teacher/class-subjects/${classSubjectId}/final-grades?academicYearId=${academicYearId}&semester=${semester}`
+    `/teacher/class-subjects/${classSubjectId}/final-grades?academicYearId=${academicYearId}`
   );
 }
 
@@ -567,7 +584,6 @@ export function saveFinalGrades(
   classSubjectId: string,
   payload: {
     academicYearId: string;
-    semester: 1 | 2;
     entries: { studentId: string; finalGrade: number | null; notes?: string }[];
   }
 ): Promise<void> {
