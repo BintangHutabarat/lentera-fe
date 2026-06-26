@@ -138,17 +138,15 @@ export interface PrincipalFinalGrades {
   subject: { id: string; name: string; shortName: string };
   teacher: { userId: string; name: string };
   academicYearLabel: string;
-  semester: number;
   entries: PrincipalFinalGradeEntry[];
 }
 
 export function getPrincipalFinalGrades(
   classSubjectId: string,
-  academicYearId: string,
-  semester: 1 | 2
+  academicYearId: string
 ): Promise<PrincipalFinalGrades> {
   return apiFetch<PrincipalFinalGrades>(
-    `/principal/class-subjects/${classSubjectId}/final-grades?academicYearId=${academicYearId}&semester=${semester}`
+    `/principal/class-subjects/${classSubjectId}/final-grades?academicYearId=${academicYearId}`
   );
 }
 
@@ -159,7 +157,6 @@ export interface PrincipalClassReport {
   className: string;
   gradeYear: number;
   academicYearLabel: string;
-  semester: number;
   subjects: {
     classSubjectId: string;
     subject: { id: string; name: string; shortName: string };
@@ -176,10 +173,9 @@ export interface PrincipalClassReport {
 
 export function getPrincipalClassReport(
   classId: string,
-  academicYearId: string,
-  semester: 1 | 2
+  academicYearId: string
 ): Promise<PrincipalClassReport> {
   return apiFetch<PrincipalClassReport>(
-    `/principal/classes/${classId}/report?academicYearId=${academicYearId}&semester=${semester}`
+    `/principal/classes/${classId}/report?academicYearId=${academicYearId}`
   );
 }

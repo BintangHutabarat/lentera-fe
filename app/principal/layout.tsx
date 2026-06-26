@@ -1,10 +1,10 @@
 import { PrincipalBottomNav } from "@/components/layout/PrincipalBottomNav";
+import { AppShell } from "@/components/layout/AppShell";
 
 export default function PrincipalLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-dvh bg-surface-page">
-      <main className="pb-safe">{children}</main>
-      <PrincipalBottomNav />
-    </div>
+    <AppShell role="principal" roleLabel="Kepala Sekolah" bottomNav={<PrincipalBottomNav />}>
+      {children}
+    </AppShell>
   );
 }

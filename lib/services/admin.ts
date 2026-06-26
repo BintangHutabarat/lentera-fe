@@ -154,11 +154,12 @@ export interface AdminClass {
   subjectCount: number;
 }
 
-export function getAdminClasses(): Promise<AdminClass[]> {
-  return apiFetch<AdminClass[]>("/admin/classes");
+export function getAdminClasses(params?: { academicYearId?: string }): Promise<AdminClass[]> {
+  const qs = params?.academicYearId ? `?academicYearId=${params.academicYearId}` : "";
+  return apiFetch<AdminClass[]>(`/admin/classes${qs}`);
 }
 
-export function createClass(payload: { name: string; gradeYear: number }): Promise<{ id: string; name: string; gradeYear: number }> {
+export function createClass(payload: { name: string; gradeYear: number; academicYearId: string }): Promise<{ id: string; name: string; gradeYear: number }> {
   return apiFetch<{ id: string; name: string; gradeYear: number }>("/admin/classes", {
     method: "POST",
     body: JSON.stringify(payload),
@@ -187,7 +188,6 @@ export interface AdminSubject {
   color: string;
   iconKey: string;
   classCount: number;
-  chapterCount: number;
 }
 
 export function getAdminSubjects(): Promise<AdminSubject[]> {
@@ -322,46 +322,6 @@ export function getAdminClassDetail(id: string): Promise<AdminClassDetail> {
   return apiFetch<AdminClassDetail>(`/admin/classes/${id}`);
 }
 
-// ── Chapters ──────────────────────────────────────────────────────────────────
-
-export interface AdminChapter {
-  id: string;
-  order: number;
-  title: string;
-  hasContent: boolean;
-}
-
-export function getAdminChapters(subjectId: string): Promise<AdminChapter[]> {
-  return apiFetch<AdminChapter[]>(`/admin/subjects/${subjectId}/chapters`);
-}
-
-export function createChapter(
-  subjectId: string,
-  payload: { order: number; title: string; content?: string }
-): Promise<{ id: string; order: number; title: string }> {
-  return apiFetch<{ id: string; order: number; title: string }>(
-    `/admin/subjects/${subjectId}/chapters`,
-    { method: "POST", body: JSON.stringify(payload) }
-  );
-}
-
-export function updateChapter(
-  subjectId: string,
-  chapterId: string,
-  payload: { title?: string; content?: string }
-): Promise<void> {
-  return apiFetch<void>(`/admin/subjects/${subjectId}/chapters/${chapterId}`, {
-    method: "PATCH",
-    body: JSON.stringify(payload),
-  });
-}
-
-export function deleteChapter(subjectId: string, chapterId: string): Promise<void> {
-  return apiFetch<void>(`/admin/subjects/${subjectId}/chapters/${chapterId}`, {
-    method: "DELETE",
-  });
-}
-
 // ── Admin Content Management (tugas & quiz per class-subject) ─────────────────
 
 export interface AdminAssignmentItem {
@@ -385,7 +345,6 @@ export function deleteAdminAssignment(id: string): Promise<void> {
 export interface AdminQuizItem {
   id: string;
   title: string;
-  chapter: string;
   durationMinutes: number;
   totalQuestions: number;
   maxAttempts: number;

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, BookOpen, Brain, CheckCircle2, ClipboardList, Clock, XCircle } from "lucide-react";
+import { ArrowLeft, Brain, ClipboardList, Clock, XCircle } from "lucide-react";
 import { getStudentProgress, getClassSubjectStudents } from "@/lib/services/teacher";
 import type { StudentProgress, TeacherStudent } from "@/lib/services/teacher";
 
@@ -46,7 +46,6 @@ export default function TeacherStudentProgressPage() {
     ? Math.round(progress.assignments.filter((a) => a.score !== null).reduce((s, a) => s + (a.score ?? 0), 0) / gradedCount)
     : null;
   const attemptedQuizzes = progress.quizzes.filter((q) => q.attempted).length;
-  const completedChapters = progress.chapters.filter((c) => c.completed).length;
 
   return (
     <>
@@ -67,7 +66,7 @@ export default function TeacherStudentProgressPage() {
 
       <div className="px-3.5 pt-3.5 pb-8">
         {/* Summary */}
-        <div className="grid grid-cols-3 gap-2.5 mb-3.5">
+        <div className="grid grid-cols-2 gap-2.5 mb-3.5">
           <div className="card p-3 text-center">
             <div className="text-[16px] font-extrabold text-brand-blue">{submittedCount}/{progress.assignments.length}</div>
             <div className="text-[10px] text-ink-muted mt-0.5">Tugas Kumpul</div>
@@ -75,10 +74,6 @@ export default function TeacherStudentProgressPage() {
           <div className="card p-3 text-center">
             <div className="text-[16px] font-extrabold text-teal-dark">{avgScore !== null ? avgScore : "—"}</div>
             <div className="text-[10px] text-ink-muted mt-0.5">Rata-rata Nilai</div>
-          </div>
-          <div className="card p-3 text-center">
-            <div className="text-[16px] font-extrabold text-yellow-dark">{completedChapters}/{progress.chapters.length}</div>
-            <div className="text-[10px] text-ink-muted mt-0.5">Bab Selesai</div>
           </div>
         </div>
 
@@ -152,34 +147,6 @@ export default function TeacherStudentProgressPage() {
           </>
         )}
 
-        {/* Chapters */}
-        {progress.chapters.length > 0 && (
-          <>
-            <h3 className="text-[13px] font-extrabold text-ink mb-2.5 flex items-center gap-1.5">
-              <BookOpen size={14} /> Bab ({completedChapters}/{progress.chapters.length})
-            </h3>
-            <div className="card mb-3.5">
-              {progress.chapters.map((ch, i) => (
-                <div
-                  key={ch.id}
-                  className={`flex items-center gap-3 px-4 py-3 ${i < progress.chapters.length - 1 ? "border-b border-surface-soft" : ""}`}
-                >
-                  <div className="text-[10px] font-extrabold text-ink-muted w-5 text-center flex-shrink-0">
-                    {ch.order}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[12px] font-bold text-ink truncate">{ch.title}</div>
-                  </div>
-                  {ch.completed ? (
-                    <CheckCircle2 size={16} className="text-brand-teal flex-shrink-0" />
-                  ) : (
-                    <div className="w-4 h-4 rounded-full border-2 border-border flex-shrink-0" />
-                  )}
-                </div>
-              ))}
-            </div>
-          </>
-        )}
       </div>
     </>
   );

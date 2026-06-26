@@ -31,7 +31,6 @@ function TeacherBuatQuizContent() {
   const [classSubjects, setClassSubjects] = useState<TeacherClassSubject[]>([]);
   const [classSubjectId, setClassSubjectId] = useState(search.get("classSubjectId") ?? "");
   const [title, setTitle] = useState("");
-  const [chapter, setChapter] = useState("");
   const [durationMinutes, setDurationMinutes] = useState(30);
   const [maxAttempts, setMaxAttempts] = useState(1);
   const [questions, setQuestions] = useState<QuizQuestionInput[]>([emptyQuestion()]);
@@ -56,8 +55,8 @@ function TeacherBuatQuizContent() {
     );
 
   const handleSubmit = async () => {
-    if (!classSubjectId || !title.trim() || !chapter.trim()) {
-      setError("Mohon lengkapi kelas-mapel, judul, dan bab.");
+    if (!classSubjectId || !title.trim()) {
+      setError("Mohon lengkapi kelas-mapel dan judul.");
       return;
     }
     for (let i = 0; i < questions.length; i++) {
@@ -81,7 +80,6 @@ function TeacherBuatQuizContent() {
       const res = await createQuiz({
         classSubjectId,
         title: title.trim(),
-        chapter: chapter.trim(),
         durationMinutes,
         maxAttempts,
         questions: questions.map((q, i) => ({ ...q, order: i + 1 })),
@@ -132,25 +130,14 @@ function TeacherBuatQuizContent() {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-2.5">
-          <div>
-            <label className="block text-[11px] font-extrabold text-ink mb-1.5">Bab *</label>
-            <input
-              value={chapter}
-              onChange={(e) => setChapter(e.target.value)}
-              placeholder="Bab 3"
-              className="w-full h-11 rounded-[10px] border border-border bg-surface-card px-3 text-[13px] text-ink outline-none focus:border-brand-blue"
-            />
-          </div>
-          <div>
-            <label className="block text-[11px] font-extrabold text-ink mb-1.5">Durasi (menit) *</label>
-            <input
-              type="number"
-              value={durationMinutes}
-              onChange={(e) => setDurationMinutes(Number(e.target.value))}
-              className="w-full h-11 rounded-[10px] border border-border bg-surface-card px-3 text-[13px] text-ink outline-none focus:border-brand-blue"
-            />
-          </div>
+        <div>
+          <label className="block text-[11px] font-extrabold text-ink mb-1.5">Durasi (menit) *</label>
+          <input
+            type="number"
+            value={durationMinutes}
+            onChange={(e) => setDurationMinutes(Number(e.target.value))}
+            className="w-full h-11 rounded-[10px] border border-border bg-surface-card px-3 text-[13px] text-ink outline-none focus:border-brand-blue"
+          />
         </div>
 
         <div>

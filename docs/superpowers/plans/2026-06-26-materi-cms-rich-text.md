@@ -157,7 +157,6 @@ git commit -m "feat: add RichContent sanitized HTML renderer"
 import type { ReactNode } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import Link from "@tiptap/extension-link";
 import { Bold, Italic, List, ListOrdered, Heading2, Link2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -188,10 +187,15 @@ export function RichTextEditor({ value, onChange }: RichTextEditorProps) {
   const editor = useEditor({
     immediatelyRender: false, // wajib untuk SSR Next App Router
     extensions: [
-      StarterKit.configure({ heading: { levels: [2, 3] } }),
-      Link.configure({
-        openOnClick: false,
-        HTMLAttributes: { rel: "noopener noreferrer", target: "_blank" },
+      // Tiptap v3: StarterKit SUDAH menyertakan ekstensi Link (juga underline).
+      // Konfigurasikan link di sini; JANGAN import @tiptap/extension-link terpisah
+      // (akan duplikat & crash runtime: "Duplicate extension names found: ['link']").
+      StarterKit.configure({
+        heading: { levels: [2, 3] },
+        link: {
+          openOnClick: false,
+          HTMLAttributes: { rel: "noopener noreferrer", target: "_blank" },
+        },
       }),
     ],
     content: value,

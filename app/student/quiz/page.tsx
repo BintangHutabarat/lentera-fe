@@ -95,7 +95,7 @@ export default function QuizPage() {
                     <div className="flex-1 min-w-0">
                       <div className="text-[13px] font-extrabold text-ink">{q.title} — {q.subject.name}</div>
                       <div className="text-[11px] text-ink-muted mt-1">
-                        {q.totalQuestions} soal • {q.durationMinutes} menit • {q.chapter}
+                        {q.totalQuestions} soal • {q.durationMinutes} menit
                       </div>
                     </div>
                     <div className="text-right flex-shrink-0">
@@ -128,7 +128,7 @@ export default function QuizPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-[13px] font-extrabold text-ink">{q.title} — {q.subject.name}</div>
-                      <div className="text-[11px] text-ink-muted mt-0.5">{q.totalQuestions} soal • {q.chapter}</div>
+                      <div className="text-[11px] text-ink-muted mt-0.5">{q.totalQuestions} soal</div>
                       {q.lastStars && <Stars count={q.lastStars} />}
                     </div>
                     <div className="text-right flex-shrink-0">

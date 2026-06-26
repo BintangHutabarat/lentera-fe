@@ -8,7 +8,7 @@ import {
   getTeacherClassSubjects,
 } from "@/lib/services/teacher";
 import { getAcademicYears } from "@/lib/services/admin";
-import type { FinalGradeEntry, FinalGradesResponse } from "@/lib/services/teacher";
+import type { FinalGradesResponse } from "@/lib/services/teacher";
 import type { AcademicYear } from "@/lib/services/admin";
 
 function RefBadge({ label, value }: { label: string; value: number | null }) {
@@ -26,7 +26,6 @@ export default function TeacherNilaiAkhirPage() {
 
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
   const [selectedYear, setSelectedYear] = useState<string>("");
-  const [semester, setSemester] = useState<1 | 2>(1);
   const [subjectName, setSubjectName] = useState("");
 
   const [data, setData] = useState<FinalGradesResponse | null>(null);
@@ -55,7 +54,7 @@ export default function TeacherNilaiAkhirPage() {
     setData(null);
     setError(null);
     try {
-      const res = await getFinalGrades(classSubjectId, selectedYear, semester);
+      const res = await getFinalGrades(classSubjectId, selectedYear);
       setData(res);
       const g: Record<string, string> = {};
       const n: Record<string, string> = {};
@@ -81,7 +80,7 @@ export default function TeacherNilaiAkhirPage() {
         finalGrade: grades[e.studentId] !== "" ? Number(grades[e.studentId]) : null,
         notes: noteMap[e.studentId] || undefined,
       }));
-      await saveFinalGrades(classSubjectId, { academicYearId: selectedYear, semester, entries });
+      await saveFinalGrades(classSubjectId, { academicYearId: selectedYear, entries });
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch {
@@ -124,22 +123,6 @@ export default function TeacherNilaiAkhirPage() {
                 ))}
               </select>
               <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted pointer-events-none" />
-            </div>
-          </div>
-          <div>
-            <label className="block text-[10px] font-bold text-ink-muted mb-1.5">Semester</label>
-            <div className="flex gap-2">
-              {([1, 2] as const).map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setSemester(s)}
-                  className={`flex-1 h-10 rounded-[10px] text-[13px] font-extrabold transition-colors cursor-pointer ${
-                    semester === s ? "bg-brand-blue text-white" : "bg-surface-soft text-ink-muted"
-                  }`}
-                >
-                  Semester {s}
-                </button>
-              ))}
             </div>
           </div>
           <button

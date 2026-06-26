@@ -1,6 +1,6 @@
 import { apiFetch } from "@/lib/api";
 
-export type UploadPurpose = "assignment_submission" | "avatar" | "chapter_content" | "materi";
+export type UploadPurpose = "assignment_submission" | "avatar" | "materi";
 
 export interface PresignResponse {
   uploadUrl: string;

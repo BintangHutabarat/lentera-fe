@@ -5,6 +5,7 @@ import { ArrowLeft, FileText, Loader2, Trash2 } from "lucide-react";
 import { getTeacherMateriDetail, deleteTeacherMateri } from "@/lib/services/teacher";
 import type { MateriItem } from "@/lib/services/teacher";
 import { RichContent } from "@/components/materi/RichContent";
+import { FilePreviewModal, type PreviewFile } from "@/components/ui/FilePreviewModal";
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
@@ -18,6 +19,7 @@ export default function TeacherMateriDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [preview, setPreview] = useState<PreviewFile | null>(null);
 
   useEffect(() => {
     getTeacherMateriDetail(id, materiId)
@@ -73,23 +75,25 @@ export default function TeacherMateriDetailPage() {
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5">
               {materi.attachments.map((a) =>
                 a.type === "IMAGE" ? (
-                  <a key={a.id ?? a.fileName} href={a.content} target="_blank" rel="noopener noreferrer" className="block rounded-[12px] overflow-hidden border border-border aspect-square">
+                  <button key={a.id ?? a.fileName} type="button" onClick={() => setPreview({ url: a.content, fileName: a.fileName, type: "IMAGE" })} className="block rounded-[12px] overflow-hidden border border-border aspect-square cursor-pointer">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={a.content} alt={a.fileName} loading="lazy" className="w-full h-full object-cover" />
-                  </a>
+                  </button>
                 ) : (
-                  <a key={a.id ?? a.fileName} href={a.content} target="_blank" rel="noopener noreferrer" download={a.fileName} className="flex items-center gap-2.5 rounded-[12px] border border-border bg-surface-card px-3 py-3 hover:bg-surface-soft transition-colors">
+                  <button key={a.id ?? a.fileName} type="button" onClick={() => setPreview({ url: a.content, fileName: a.fileName, type: "PDF" })} className="flex items-center gap-2.5 rounded-[12px] border border-border bg-surface-card px-3 py-3 hover:bg-surface-soft transition-colors text-left cursor-pointer">
                     <span className="w-9 h-9 rounded-[8px] bg-red-light flex items-center justify-center flex-shrink-0">
                       <FileText size={17} className="text-red-dark" />
                     </span>
                     <span className="text-[12px] font-bold text-ink truncate">{a.fileName}</span>
-                  </a>
+                  </button>
                 ),
               )}
             </div>
           </div>
         )}
       </div>
+
+      <FilePreviewModal file={preview} onClose={() => setPreview(null)} />
     </>
   );
 }

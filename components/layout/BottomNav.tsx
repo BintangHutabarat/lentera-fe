@@ -1,18 +1,8 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, BookOpen, ClipboardList, Brain, MessageCircle, User } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { LucideIcon } from "lucide-react";
-
-const NAV_ITEMS: { href: string; label: string; Icon: LucideIcon }[] = [
-  { href: "/student/beranda",   label: "Beranda",  Icon: Home },
-  { href: "/student/pelajaran", label: "Pelajaran",Icon: BookOpen },
-  { href: "/student/tugas",     label: "Tugas",    Icon: ClipboardList },
-  { href: "/student/quiz",      label: "Quiz",     Icon: Brain },
-  { href: "/student/forum",     label: "Forum",    Icon: MessageCircle },
-  { href: "/student/profil",    label: "Profil",   Icon: User },
-];
+import { studentNav } from "@/lib/nav-config";
 
 export function BottomNav() {
   const pathname = usePathname();
@@ -24,10 +14,10 @@ export function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 bg-surface-card border-t border-border flex z-20"
+      className="lg:hidden fixed bottom-0 left-0 right-0 bg-surface-card border-t border-border flex z-20"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      {NAV_ITEMS.map(({ href, label, Icon }) => {
+      {studentNav.map(({ href, label, Icon }) => {
         const active = pathname.startsWith(href);
         return (
           <Link

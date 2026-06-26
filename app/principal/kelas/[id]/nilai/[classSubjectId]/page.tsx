@@ -22,7 +22,6 @@ export default function PrincipalNilaiAkhirPage() {
 
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
   const [selectedYear, setSelectedYear] = useState<string>("");
-  const [semester, setSemester] = useState<1 | 2>(1);
 
   const [data, setData] = useState<PrincipalFinalGrades | null>(null);
   const [loading, setLoading] = useState(false);
@@ -42,7 +41,7 @@ export default function PrincipalNilaiAkhirPage() {
     setData(null);
     setError(null);
     try {
-      const res = await getPrincipalFinalGrades(classSubjectId, selectedYear, semester);
+      const res = await getPrincipalFinalGrades(classSubjectId, selectedYear);
       setData(res);
     } catch {
       setError("Gagal memuat nilai akhir.");
@@ -82,19 +81,6 @@ export default function PrincipalNilaiAkhirPage() {
               </select>
               <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted pointer-events-none" />
             </div>
-          </div>
-          <div className="flex gap-2">
-            {([1, 2] as const).map((s) => (
-              <button
-                key={s}
-                onClick={() => setSemester(s)}
-                className={`flex-1 h-10 rounded-[10px] text-[13px] font-extrabold transition-colors cursor-pointer ${
-                  semester === s ? "bg-brand-blue text-white" : "bg-surface-soft text-ink-muted"
-                }`}
-              >
-                Semester {s}
-              </button>
-            ))}
           </div>
           <button
             onClick={loadGrades}

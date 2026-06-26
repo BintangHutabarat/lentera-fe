@@ -178,7 +178,6 @@ export function gradeSubmission(assignmentId: string, studentId: string, payload
 export interface TeacherQuizListItem {
   id: string;
   title: string;
-  chapter: string;
   durationMinutes: number;
   totalQuestions: number;
   classSubject: {
@@ -206,7 +205,6 @@ export interface QuizQuestionInput {
 export interface CreateQuizPayload {
   classSubjectId: string;
   title: string;
-  chapter: string;
   durationMinutes: number;
   maxAttempts?: number;
   questions: QuizQuestionInput[];
@@ -231,7 +229,6 @@ export interface TeacherQuizQuestion {
 export interface TeacherQuizDetail {
   id: string;
   title: string;
-  chapter: string;
   durationMinutes: number;
   maxAttempts: number;
   totalQuestions: number;
@@ -250,7 +247,6 @@ export function getTeacherQuiz(id: string): Promise<TeacherQuizDetail> {
 
 export interface UpdateQuizPayload {
   title?: string;
-  chapter?: string;
   durationMinutes?: number;
   maxAttempts?: number;
   questions?: QuizQuestionInput[];
@@ -309,17 +305,9 @@ export interface StudentProgressQuiz {
   bestStars: number | null;
 }
 
-export interface StudentProgressChapter {
-  id: string;
-  order: number;
-  title: string;
-  completed: boolean;
-}
-
 export interface StudentProgress {
   assignments: StudentProgressAssignment[];
   quizzes: StudentProgressQuiz[];
-  chapters: StudentProgressChapter[];
 }
 
 export function getStudentProgress(classSubjectId: string, studentId: string): Promise<StudentProgress> {
