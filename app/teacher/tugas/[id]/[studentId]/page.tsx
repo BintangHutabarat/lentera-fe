@@ -1,13 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, FileText, Loader2 } from "lucide-react";
+import { ArrowLeft, Eye, FileText, Loader2 } from "lucide-react";
 import {
   getSubmissionDetail,
   getTeacherAssignment,
   gradeSubmission,
 } from "@/lib/services/teacher";
 import { Avatar } from "@/components/ui/Avatar";
+import { FilePreviewModal, type PreviewFile } from "@/components/ui/FilePreviewModal";
 import { isApiError } from "@/lib/api";
 import type { SubmissionDetail, TeacherAssignmentDetail } from "@/lib/services/teacher";
 
@@ -30,6 +31,7 @@ export default function TeacherSubmissionDetailPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [preview, setPreview] = useState<PreviewFile | null>(null);
 
   useEffect(() => {
     Promise.all([getTeacherAssignment(id), getSubmissionDetail(id, studentId)])
@@ -127,20 +129,20 @@ export default function TeacherSubmissionDetailPage() {
         <h4 className="text-[12px] font-extrabold text-ink mb-2">Jawaban Siswa</h4>
         <div className="card p-4 mb-3.5">
           {submission.kind === "FILE" && submission.fileUrl && (
-            <a
-              href={submission.fileUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2.5 cursor-pointer"
+            <button
+              type="button"
+              onClick={() => setPreview({ url: submission.fileUrl!, fileName: submission.fileName })}
+              className="w-full flex items-center gap-2.5 cursor-pointer text-left"
             >
               <div className="w-9 h-9 rounded-[10px] bg-blue-light flex items-center justify-center flex-shrink-0">
                 <FileText size={16} className="text-brand-blue" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-[12px] font-bold text-ink truncate">{submission.fileName}</div>
-                <div className="text-[10px] text-ink-muted">{submission.fileSizeKB} KB • Klik untuk lihat</div>
+                <div className="text-[10px] text-ink-muted">{submission.fileSizeKB} KB • Ketuk untuk pratinjau</div>
               </div>
-            </a>
+              <Eye size={16} className="text-brand-blue flex-shrink-0" />
+            </button>
           )}
           {submission.kind === "ESSAY" && (
             <p className="text-[12px] text-ink-secondary whitespace-pre-wrap leading-relaxed">
@@ -231,6 +233,8 @@ export default function TeacherSubmissionDetailPage() {
           </button>
         </div>
       </div>
+
+      <FilePreviewModal file={preview} onClose={() => setPreview(null)} />
     </>
   );
 }

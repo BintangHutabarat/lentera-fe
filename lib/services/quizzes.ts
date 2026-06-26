@@ -5,7 +5,6 @@ export interface QuizListItem {
   id: string;
   title: string;
   subject: { id: string; name: string; color: SubjectColor };
-  chapter: string;
   totalQuestions: number;
   durationMinutes: number;
   completed: boolean;

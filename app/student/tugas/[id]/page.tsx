@@ -3,14 +3,14 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   AlertCircle, ArrowLeft, CalendarClock, CheckCircle2, Download,
-  FileCheck2, FileText, GraduationCap, ListChecks, Loader2,
+  Eye, FileCheck2, FileText, GraduationCap, ListChecks, Loader2,
   MessageSquareText, Paperclip, Star, Upload, X,
 } from "lucide-react";
 import { getAssignment, submitAssignment } from "@/lib/services/assignments";
-import { presignUpload, uploadFile } from "@/lib/services/uploads";
+import { readAsDataUrl } from "@/lib/files";
 import { isApiError } from "@/lib/api";
 import { Chip } from "@/components/ui/Chip";
-import { ProgressBar } from "@/components/ui/ProgressBar";
+import { FilePreviewModal, type PreviewFile } from "@/components/ui/FilePreviewModal";
 import { cn, dueUrgencyStyles, getDueUrgency, getDueLabel, subjectColorMap } from "@/lib/utils";
 import { subjectIcons } from "@/lib/icons";
 import type { AssignmentDetail } from "@/lib/services/assignments";
@@ -29,6 +29,10 @@ function wordCount(s: string) {
   return s.trim() ? s.trim().split(/\s+/).length : 0;
 }
 
+// File dikirim inline sebagai base64 di body JSON; BE membatasi body 10 MB,
+// base64 menggembungkan ~1.33x, jadi batasi file mentah ~7 MB.
+const MAX_SUBMIT_BYTES = 7 * 1024 * 1024;
+
 export default function TugasDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -45,6 +49,7 @@ export default function TugasDetailPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [justSubmittedAt, setJustSubmittedAt] = useState<string | null>(null);
+  const [preview, setPreview] = useState<PreviewFile | null>(null);
 
   useEffect(() => {
     getAssignment(params.id)
@@ -105,15 +110,9 @@ export default function TugasDetailPage() {
     setSubmitError(null);
     try {
       if (isFile && selectedFile) {
-        const { uploadUrl, fileKey } = await presignUpload(
-          "assignment_submission",
-          selectedFile.name,
-          selectedFile.size,
-          selectedFile.type,
-        );
-        await uploadFile(uploadUrl, selectedFile);
+        const dataUrl = await readAsDataUrl(selectedFile);
         await submitAssignment(params.id, {
-          fileUrl: fileKey,
+          fileUrl: dataUrl,
           fileName: selectedFile.name,
           fileSize: selectedFile.size,
           note: note || undefined,
@@ -306,7 +305,12 @@ export default function TugasDetailPage() {
               <FileCheck2 size={14} className="text-brand-teal" /> Yang kamu kumpulkan
             </h3>
             {submission.kind === "FILE" && submission.fileName ? (
-              <div className="flex gap-3 items-center px-3 py-2.5 rounded-[10px] bg-teal-light mb-2.5">
+              <button
+                type="button"
+                disabled={!submission.fileUrl}
+                onClick={() => submission.fileUrl && setPreview({ url: submission.fileUrl, fileName: submission.fileName })}
+                className="w-full flex gap-3 items-center px-3 py-2.5 rounded-[10px] bg-teal-light mb-2.5 text-left disabled:cursor-default enabled:cursor-pointer"
+              >
                 <div className="w-9 h-9 rounded-[8px] bg-white flex items-center justify-center flex-shrink-0">
                   <FileText size={16} className="text-teal-dark" />
                 </div>
@@ -314,10 +318,11 @@ export default function TugasDetailPage() {
                   <div className="text-[12px] font-bold text-ink truncate">{submission.fileName}</div>
                   <div className="text-[10px] text-ink-muted">
                     {submission.fileSizeKB !== null && `${fmtKB(submission.fileSizeKB)} • `}
-                    {new Date(submission.submittedAt).toLocaleDateString("id-ID")}
+                    {submission.fileUrl ? "Ketuk untuk pratinjau" : new Date(submission.submittedAt).toLocaleDateString("id-ID")}
                   </div>
                 </div>
-              </div>
+                {submission.fileUrl && <Eye size={16} className="text-teal-dark flex-shrink-0" />}
+              </button>
             ) : submission.kind === "ESSAY" && submission.essayText ? (
               <div className="bg-teal-light rounded-[10px] p-3 mb-2.5">
                 <div className="flex items-center justify-between text-[10px] mb-1.5">
@@ -367,7 +372,17 @@ export default function TugasDetailPage() {
             <input
               ref={fileInputRef}
               type="file"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) setSelectedFile(f); }}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (!f) return;
+                if (f.size > MAX_SUBMIT_BYTES) {
+                  setSubmitError("Ukuran file maks 7 MB.");
+                  if (fileInputRef.current) fileInputRef.current.value = "";
+                  return;
+                }
+                setSubmitError(null);
+                setSelectedFile(f);
+              }}
               className="hidden"
               accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
             />
@@ -502,6 +517,8 @@ export default function TugasDetailPage() {
           </div>
         </div>
       )}
+
+      <FilePreviewModal file={preview} onClose={() => setPreview(null)} />
     </div>
   );
 }

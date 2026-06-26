@@ -1,26 +1,18 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, BookOpen, Users, User } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { LucideIcon } from "lucide-react";
-
-const NAV_ITEMS: { href: string; label: string; Icon: LucideIcon }[] = [
-  { href: "/principal/beranda",  label: "Beranda",  Icon: Home },
-  { href: "/principal/kelas",    label: "Kelas",    Icon: BookOpen },
-  { href: "/principal/pengguna", label: "Pengguna", Icon: Users },
-  { href: "/principal/profil",   label: "Profil",   Icon: User },
-];
+import { principalNav } from "@/lib/nav-config";
 
 export function PrincipalBottomNav() {
   const pathname = usePathname();
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 bg-surface-card border-t border-border flex z-20"
+      className="lg:hidden fixed bottom-0 left-0 right-0 bg-surface-card border-t border-border flex z-20"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      {NAV_ITEMS.map(({ href, label, Icon }) => {
+      {principalNav.map(({ href, label, Icon }) => {
         const active = pathname.startsWith(href);
         return (
           <Link

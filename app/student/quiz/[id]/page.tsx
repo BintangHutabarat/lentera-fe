@@ -295,7 +295,7 @@ export default function QuizDetailPage() {
           </button>
           <div className="flex-1 min-w-0">
             <div className="text-[13px] font-extrabold text-ink truncate">{quiz.title}</div>
-            <div className="text-[10px] text-ink-muted truncate">{quiz.subject.name} • {quiz.chapter}</div>
+            <div className="text-[10px] text-ink-muted truncate">{quiz.subject.name}</div>
           </div>
           <div
             className={cn(

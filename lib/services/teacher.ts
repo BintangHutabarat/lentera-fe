@@ -178,7 +178,6 @@ export function gradeSubmission(assignmentId: string, studentId: string, payload
 export interface TeacherQuizListItem {
   id: string;
   title: string;
-  chapter: string;
   durationMinutes: number;
   totalQuestions: number;
   classSubject: {
@@ -206,7 +205,6 @@ export interface QuizQuestionInput {
 export interface CreateQuizPayload {
   classSubjectId: string;
   title: string;
-  chapter: string;
   durationMinutes: number;
   maxAttempts?: number;
   questions: QuizQuestionInput[];
@@ -231,7 +229,6 @@ export interface TeacherQuizQuestion {
 export interface TeacherQuizDetail {
   id: string;
   title: string;
-  chapter: string;
   durationMinutes: number;
   maxAttempts: number;
   totalQuestions: number;
@@ -250,7 +247,6 @@ export function getTeacherQuiz(id: string): Promise<TeacherQuizDetail> {
 
 export interface UpdateQuizPayload {
   title?: string;
-  chapter?: string;
   durationMinutes?: number;
   maxAttempts?: number;
   questions?: QuizQuestionInput[];
@@ -309,43 +305,54 @@ export interface StudentProgressQuiz {
   bestStars: number | null;
 }
 
-export interface StudentProgressChapter {
-  id: string;
-  order: number;
-  title: string;
-  completed: boolean;
-}
-
 export interface StudentProgress {
   assignments: StudentProgressAssignment[];
   quizzes: StudentProgressQuiz[];
-  chapters: StudentProgressChapter[];
 }
 
 export function getStudentProgress(classSubjectId: string, studentId: string): Promise<StudentProgress> {
   return apiFetch<StudentProgress>(`/teacher/subjects/${classSubjectId}/students/${studentId}/progress`);
 }
 
-// ── Materi (feed datar: teks / foto / pdf) ──────────────────────────────────────
+// ── Materi (CMS: judul + isi rich-text + lampiran) ───────────────────────────
 
-export type MateriType = "TEXT" | "IMAGE" | "PDF";
+export type MateriType = "IMAGE" | "PDF";
+
+export interface MateriAttachment {
+  id?: string;
+  type: MateriType;
+  content: string; // base64 data URL (kirim) / URL (baca)
+  fileName: string;
+}
+
+export interface MateriListItem {
+  id: string;
+  title: string;
+  excerpt: string;
+  attachmentCount: number;
+  createdAt: string;
+}
 
 export interface MateriItem {
   id: string;
-  type: MateriType;
-  content: string; // teks (TEXT) atau URL file (IMAGE/PDF)
-  fileName: string | null;
+  title: string;
+  body: string; // HTML
+  attachments: MateriAttachment[];
   createdAt: string;
 }
 
 export interface CreateMateriPayload {
-  type: MateriType;
-  content: string;
-  fileName?: string;
+  title: string;
+  body: string;
+  attachments: { type: MateriType; content: string; fileName: string }[];
 }
 
-export function getTeacherMateri(classSubjectId: string): Promise<MateriItem[]> {
-  return apiFetch<MateriItem[]>(`/teacher/subjects/${classSubjectId}/materi`);
+export function getTeacherMateri(classSubjectId: string): Promise<MateriListItem[]> {
+  return apiFetch<MateriListItem[]>(`/teacher/subjects/${classSubjectId}/materi`);
+}
+
+export function getTeacherMateriDetail(classSubjectId: string, materiId: string): Promise<MateriItem> {
+  return apiFetch<MateriItem>(`/teacher/subjects/${classSubjectId}/materi/${materiId}`);
 }
 
 export function createTeacherMateri(classSubjectId: string, payload: CreateMateriPayload): Promise<MateriItem> {
@@ -549,17 +556,15 @@ export interface FinalGradesResponse {
   classSubjectId: string;
   academicYearId: string;
   academicYearLabel: string;
-  semester: number;
   entries: FinalGradeEntry[];
 }
 
 export function getFinalGrades(
   classSubjectId: string,
-  academicYearId: string,
-  semester: 1 | 2
+  academicYearId: string
 ): Promise<FinalGradesResponse> {
   return apiFetch<FinalGradesResponse>(
-    `/teacher/class-subjects/${classSubjectId}/final-grades?academicYearId=${academicYearId}&semester=${semester}`
+    `/teacher/class-subjects/${classSubjectId}/final-grades?academicYearId=${academicYearId}`
   );
 }
 
@@ -567,7 +572,6 @@ export function saveFinalGrades(
   classSubjectId: string,
   payload: {
     academicYearId: string;
-    semester: 1 | 2;
     entries: { studentId: string; finalGrade: number | null; notes?: string }[];
   }
 ): Promise<void> {

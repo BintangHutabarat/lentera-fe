@@ -12,23 +12,10 @@ export interface Subject {
     name: string;
     title: string;
   };
-  chaptersTotal: number;
-  chaptersDone: number;
   progress: number;
-  currentChapter: string;
 }
 
-export interface Chapter {
-  id: string;
-  order: number;
-  title: string;
-  completed: boolean;
-  completedAt: string | null;
-}
-
-export interface SubjectDetail extends Omit<Subject, "chaptersTotal" | "chaptersDone" | "progress" | "currentChapter"> {
-  chapters: Chapter[];
-}
+export type SubjectDetail = Omit<Subject, "progress">;
 
 export function getSubjects(): Promise<Subject[]> {
   return apiFetch<Subject[]>("/subjects");
@@ -38,21 +25,22 @@ export function getSubject(id: string): Promise<SubjectDetail> {
   return apiFetch<SubjectDetail>(`/subjects/${id}`);
 }
 
-export function completeChapter(chapterId: string): Promise<void> {
-  return apiFetch<void>(`/subjects/chapters/${chapterId}/complete`, { method: "POST" });
-}
+// ── Materi (feed datar: teks / foto / pdf) ──────────────────────────────────────
 
-export interface ChapterContent {
+export type MateriType = "TEXT" | "IMAGE" | "PDF";
+
+export interface Materi {
   id: string;
-  order: number;
-  title: string;
-  content: string | null;
-  completed: boolean;
-  completedAt: string | null;
+  type: MateriType;
+  content: string; // teks (TEXT) atau URL file (IMAGE/PDF)
+  fileName: string | null;
+  createdAt: string;
 }
 
-export function getChapter(subjectId: string, chapterId: string): Promise<ChapterContent> {
-  return apiFetch<ChapterContent>(`/subjects/${subjectId}/chapters/${chapterId}`);
+// Catatan: route memakai segmen `class-subjects/:id`, tetapi `:id` di sini adalah
+// subjectId (konsisten dengan /subjects/:id yang dipakai halaman pelajaran siswa).
+export function getStudentMateri(subjectId: string): Promise<Materi[]> {
+  return apiFetch<Materi[]>(`/students/me/class-subjects/${subjectId}/materi`);
 }
 
 // ── Student Attendance ────────────────────────────────────────────────────────

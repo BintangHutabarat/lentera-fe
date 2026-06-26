@@ -96,7 +96,6 @@ export default function TeacherQuizDetailPage() {
           </div>
           <h2 className="text-[16px] font-extrabold text-ink mb-2">{quiz.title}</h2>
           <div className="flex flex-wrap gap-2 text-[11px]">
-            <span className="px-2 py-0.5 rounded-full bg-surface-soft text-ink-muted font-bold">{quiz.chapter}</span>
             <span className="px-2 py-0.5 rounded-full bg-surface-soft text-ink-muted font-bold">
               {quiz.totalQuestions} soal
             </span>

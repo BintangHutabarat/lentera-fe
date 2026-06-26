@@ -82,7 +82,7 @@ export default function AdminMapelPage() {
                     <div className="flex-1 min-w-0">
                       <div className="text-[13px] font-extrabold text-ink">{sub.name}</div>
                       <div className="text-[11px] text-ink-muted mt-0.5">
-                        {sub.shortName} · {sub.classCount} kelas · {sub.chapterCount} bab
+                        {sub.shortName} · {sub.classCount} kelas
                       </div>
                     </div>
                     <ChevronRight size={14} className="text-ink-muted flex-shrink-0 mr-1" />

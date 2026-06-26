@@ -99,7 +99,7 @@ export default function BerandaPage() {
     <>
       {/* ── Brand Header ── */}
       <div
-        className="relative overflow-hidden px-[18px] pb-6 pt-[18px]"
+        className="relative overflow-hidden px-[18px] pb-6 pt-[18px] lg:px-8 lg:pb-8 lg:pt-7 lg:rounded-card"
         style={{ background: "linear-gradient(135deg,#22A96C 0%,#3DD6B5 60%,#7EEFC7 100%)" }}
       >
         <div className="absolute -top-12 -right-10 w-44 h-44 rounded-full bg-white/10" />
@@ -120,23 +120,23 @@ export default function BerandaPage() {
 
         <div className="relative flex items-center justify-between">
           <div>
-            <h2 className="text-[19px] font-extrabold text-white mb-1">Hai, {student.name.split(" ")[0]}! ☀️</h2>
-            <p className="text-[12px] text-white/80">{urgentAssignments.length} tugas perlu dikumpulkan.</p>
+            <h2 className="text-[19px] lg:text-[26px] font-extrabold text-white mb-1">Hai, {student.name.split(" ")[0]}! ☀️</h2>
+            <p className="text-[12px] lg:text-[14px] text-white/80">{urgentAssignments.length} tugas perlu dikumpulkan.</p>
           </div>
           <Avatar
             initials={initials}
             bgColor="rgba(255,255,255,0.22)"
             textColor="#ffffff"
             size="lg"
-            className="w-12 h-12 border-2 border-white/35 text-[15px]"
+            className="w-12 h-12 lg:w-14 lg:h-14 border-2 border-white/35 text-[15px] lg:text-[17px]"
           />
         </div>
       </div>
 
-      <div className="px-3.5 pt-3.5">
+      <div className="px-3.5 pt-3.5 lg:px-0 lg:pt-5">
         <XPBar student={student} />
 
-        <div className="grid grid-cols-2 gap-3 mb-3.5">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-3.5 lg:mb-5">
           <StatCard
             icon={<BookMarked size={18} color="#22A96C" />}
             iconBg="#E6F6FD"
@@ -175,23 +175,23 @@ export default function BerandaPage() {
           />
         </div>
 
-        <div className="grid grid-cols-4 gap-2.5 mb-3.5">
+        <div className="grid grid-cols-4 gap-2.5 lg:gap-4 mb-3.5 lg:mb-5">
           {quickActions.map(({ label, Icon, href }) => (
             <Link
               key={href}
               href={href}
-              className="bg-surface-card border border-border rounded-[9px] py-3.5 px-2 text-center hover:border-brand-teal hover:bg-teal-light transition-all active:scale-95 cursor-pointer"
+              className="bg-surface-card border border-border rounded-[9px] lg:rounded-card py-3.5 lg:py-5 px-2 text-center hover:border-brand-teal hover:bg-teal-light transition-all active:scale-95 cursor-pointer"
             >
-              <div className="flex justify-center mb-1.5">
-                <Icon size={20} className="text-brand-blue" strokeWidth={2} />
+              <div className="flex justify-center mb-1.5 lg:mb-2">
+                <Icon size={20} className="text-brand-blue lg:w-[26px] lg:h-[26px]" strokeWidth={2} />
               </div>
-              <div className="text-[11px] font-bold text-ink">{label}</div>
+              <div className="text-[11px] lg:text-[13px] font-bold text-ink">{label}</div>
             </Link>
           ))}
         </div>
 
         <div className="flex items-center justify-between mb-2.5">
-          <h3 className="text-[14px] font-extrabold text-ink">Mata Pelajaran Aktif</h3>
+          <h3 className="text-[14px] lg:text-[17px] font-extrabold text-ink">Mata Pelajaran Aktif</h3>
           <Link href="/student/pelajaran" className="text-[12px] font-semibold text-brand-blue">Lihat semua →</Link>
         </div>
         <div className="grid grid-cols-3 gap-2.5 mb-3.5">
@@ -211,10 +211,7 @@ export default function BerandaPage() {
                   <SubjIcon size={28} strokeWidth={1.5} style={{ color: c.bar }} />
                 </div>
                 <div className="p-3">
-                  <div className={`text-[9px] font-extrabold uppercase tracking-[0.6px] mb-1 ${c.text}`}>{subj.name}</div>
-                  <div className="text-[11px] font-bold text-ink mb-1.5 leading-tight line-clamp-2">
-                    {subj.currentChapter}
-                  </div>
+                  <div className={`text-[11px] font-extrabold mb-1.5 leading-tight line-clamp-2 ${c.text}`}>{subj.name}</div>
                   <ProgressBar value={subj.progress} height="sm" color={c.bar} />
                   <div className="text-[10px] text-ink-muted mt-1">{subj.progress}%</div>
                 </div>
@@ -224,7 +221,7 @@ export default function BerandaPage() {
         </div>
 
         <div className="flex items-center justify-between mb-2.5">
-          <h3 className="text-[14px] font-extrabold text-ink">Tugas Mendekati Deadline</h3>
+          <h3 className="text-[14px] lg:text-[17px] font-extrabold text-ink">Tugas Mendekati Deadline</h3>
           <Link href="/student/tugas" className="text-[12px] font-semibold text-brand-blue">Lihat semua →</Link>
         </div>
         <div className="card mb-3.5">
@@ -270,7 +267,7 @@ export default function BerandaPage() {
         <div className="grid grid-cols-2 gap-3 mb-3.5">
           <div>
             <div className="flex items-center justify-between mb-2.5">
-              <h3 className="text-[14px] font-extrabold text-ink">Jadwal Hari Ini</h3>
+              <h3 className="text-[14px] lg:text-[17px] font-extrabold text-ink">Jadwal Hari Ini</h3>
               <Link href="/student/jadwal" className="text-[12px] font-semibold text-brand-blue">Minggu ini →</Link>
             </div>
             <div className="card p-4">
@@ -294,7 +291,7 @@ export default function BerandaPage() {
           </div>
 
           <div>
-            <h3 className="text-[14px] font-extrabold text-ink mb-2.5 flex items-center gap-1.5">
+            <h3 className="text-[14px] lg:text-[17px] font-extrabold text-ink mb-2.5 flex items-center gap-1.5">
               <Trophy size={14} className="text-brand-yellow" />
               Peringkat
             </h3>

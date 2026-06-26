@@ -2,47 +2,29 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle2, Circle, Loader2, ArrowLeft, CalendarDays, ChevronRight } from "lucide-react";
-import { getSubject, completeChapter } from "@/lib/services/subjects";
-import { ProgressBar } from "@/components/ui/ProgressBar";
+import { ArrowLeft, CalendarDays, ChevronRight, BookOpen, FileText } from "lucide-react";
+import { getSubject, getStudentMateri } from "@/lib/services/subjects";
 import { subjectColorMap } from "@/lib/utils";
 import { subjectIcons } from "@/lib/icons";
-import type { SubjectDetail, Chapter } from "@/lib/services/subjects";
+import type { SubjectDetail, Materi } from "@/lib/services/subjects";
 import type { SubjectColor } from "@/lib/services/subjects";
 
 export default function PelajaranDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [subject, setSubject] = useState<SubjectDetail | null>(null);
+  const [materi, setMateri] = useState<Materi[]>([]);
   const [loading, setLoading] = useState(true);
-  const [completing, setCompleting] = useState<string | null>(null);
 
   useEffect(() => {
-    getSubject(id).then(setSubject).catch(() => {}).finally(() => setLoading(false));
+    Promise.all([getSubject(id), getStudentMateri(id).catch(() => [] as Materi[])])
+      .then(([subj, items]) => {
+        setSubject(subj);
+        setMateri(items);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, [id]);
-
-  const handleComplete = async (chapter: Chapter) => {
-    if (chapter.completed || completing) return;
-    setCompleting(chapter.id);
-    try {
-      await completeChapter(chapter.id);
-      setSubject((prev) =>
-        prev
-          ? {
-              ...prev,
-              chapters: prev.chapters.map((c) =>
-                c.id === chapter.id
-                  ? { ...c, completed: true, completedAt: new Date().toISOString() }
-                  : c,
-              ),
-            }
-          : prev,
-      );
-    } catch {
-      /* silent */
-    }
-    setCompleting(null);
-  };
 
   if (loading) {
     return (
@@ -65,8 +47,6 @@ export default function PelajaranDetailPage() {
 
   const c = subjectColorMap[subject.color as SubjectColor];
   const SubjIcon = subjectIcons[subject.color as SubjectColor];
-  const done = subject.chapters.filter((ch) => ch.completed).length;
-  const progress = subject.chapters.length > 0 ? Math.round((done / subject.chapters.length) * 100) : 0;
 
   return (
     <>
@@ -85,7 +65,7 @@ export default function PelajaranDetailPage() {
       </header>
 
       <div className="px-3.5 pt-3.5">
-        {/* Progress card */}
+        {/* Subject card */}
         <div className="card p-4 mb-3.5 flex items-center gap-3">
           <div
             className="w-[52px] h-[52px] rounded-[14px] flex items-center justify-center flex-shrink-0"
@@ -94,11 +74,10 @@ export default function PelajaranDetailPage() {
             <SubjIcon size={28} strokeWidth={1.5} style={{ color: c.bar }} />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-[13px] font-extrabold text-ink mb-1.5">
-              {done} / {subject.chapters.length} Bab Selesai
+            <div className="text-[14px] font-extrabold text-ink truncate">{subject.name}</div>
+            <div className="text-[11px] text-ink-muted mt-0.5">
+              {subject.teacher.title} • {materi.length} materi
             </div>
-            <ProgressBar value={progress} height="sm" color={c.bar} />
-            <div className="text-[10px] text-ink-muted mt-1">{progress}% selesai</div>
           </div>
         </div>
 
@@ -114,59 +93,69 @@ export default function PelajaranDetailPage() {
           <ChevronRight size={14} className="text-ink-muted" />
         </Link>
 
-        {/* Chapter list */}
-        <h3 className="text-[13px] font-extrabold text-ink mb-2.5">Daftar Bab</h3>
-        <div className="card mb-3.5">
-          {subject.chapters.map((chapter, i) => (
-            <div
-              key={chapter.id}
-              className={`flex items-center gap-3 px-4 py-3.5 ${
-                i < subject.chapters.length - 1 ? "border-b border-surface-soft" : ""
-              }`}
-            >
-              <div
-                className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ background: chapter.completed ? `${c.bar}22` : "#F4F6F8" }}
-              >
-                <span
-                  className="text-[11px] font-extrabold"
-                  style={{ color: chapter.completed ? c.bar : "#94a3b8" }}
-                >
-                  {chapter.order}
-                </span>
-              </div>
-              <Link href={`/student/pelajaran/${id}/${chapter.id}`} className="flex-1 min-w-0 flex items-center gap-1">
-                <div className="flex-1 min-w-0">
-                  <div className="text-[13px] font-semibold text-ink">{chapter.title}</div>
-                  {chapter.completed && chapter.completedAt && (
-                    <div className="text-[10px] text-ink-muted mt-0.5">
-                      Selesai{" "}
-                      {new Date(chapter.completedAt).toLocaleDateString("id-ID", {
-                        day: "numeric",
-                        month: "short",
-                      })}
-                    </div>
-                  )}
-                </div>
-                <ChevronRight size={14} className="text-ink-muted flex-shrink-0" />
-              </Link>
-              <button
-                onClick={() => handleComplete(chapter)}
-                disabled={chapter.completed || !!completing}
-                className="flex-shrink-0 cursor-pointer disabled:cursor-default ml-1"
-                aria-label={chapter.completed ? "Sudah selesai" : "Tandai selesai"}
-              >
-                {completing === chapter.id ? (
-                  <Loader2 size={20} className="animate-spin text-ink-muted" />
-                ) : chapter.completed ? (
-                  <CheckCircle2 size={20} style={{ color: c.bar }} />
-                ) : (
-                  <Circle size={20} className="text-ink-muted hover:text-brand-blue transition-colors" />
-                )}
-              </button>
+        {/* Materi feed */}
+        <h3 className="text-[13px] font-extrabold text-ink mb-2.5 flex items-center gap-1.5">
+          <BookOpen size={14} /> Materi ({materi.length})
+        </h3>
+
+        {materi.length === 0 ? (
+          <div className="card p-6 mb-3.5 flex flex-col items-center text-center gap-1.5">
+            <div className="w-11 h-11 rounded-full bg-surface-soft flex items-center justify-center mb-1">
+              <BookOpen size={20} className="text-ink-muted" />
             </div>
-          ))}
-        </div>
+            <p className="text-[13px] font-bold text-ink">Belum ada materi</p>
+            <p className="text-[11px] text-ink-muted">Materi dari guru akan tampil di sini.</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2.5 mb-3.5">
+            {materi.map((item) => (
+              <div key={item.id} className="card p-3.5">
+                {item.type === "TEXT" ? (
+                  <p className="text-[13px] text-ink leading-relaxed whitespace-pre-wrap break-words">
+                    {item.content}
+                  </p>
+                ) : item.type === "IMAGE" ? (
+                  <a href={item.content} target="_blank" rel="noopener noreferrer" className="block">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={item.content}
+                      alt={item.fileName ?? "Foto materi"}
+                      loading="lazy"
+                      className="w-full max-h-72 object-cover rounded-[10px]"
+                    />
+                    {item.fileName && (
+                      <div className="text-[10px] text-ink-muted mt-1.5 truncate">{item.fileName}</div>
+                    )}
+                  </a>
+                ) : (
+                  <a
+                    href={item.content}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+                  >
+                    <div className="w-10 h-10 rounded-[10px] bg-red-light flex items-center justify-center flex-shrink-0">
+                      <FileText size={18} className="text-red-dark" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[12px] font-bold text-ink truncate">
+                        {item.fileName ?? "Dokumen PDF"}
+                      </div>
+                      <div className="text-[10px] text-ink-muted">Ketuk untuk membuka</div>
+                    </div>
+                  </a>
+                )}
+                <div className="text-[10px] text-ink-muted mt-2">
+                  {new Date(item.createdAt).toLocaleDateString("id-ID", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </>
   );

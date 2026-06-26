@@ -15,7 +15,7 @@ export function PageTopbar({ title, subtitle, right, back, className }: PageTopb
   const router = useRouter();
   return (
     <header className={cn(
-      "bg-surface-card border-b border-border px-[18px] py-[13px]",
+      "bg-surface-card border-b border-border px-[18px] py-[13px] lg:px-6 lg:py-4",
       "flex items-center gap-3 sticky top-0 z-10",
       className
     )}>
@@ -23,14 +23,14 @@ export function PageTopbar({ title, subtitle, right, back, className }: PageTopb
         <button
           onClick={() => router.back()}
           aria-label="Kembali"
-          className="w-8 h-8 -ml-1 rounded-[9px] flex items-center justify-center text-ink-muted hover:bg-surface-soft transition-colors cursor-pointer flex-shrink-0"
+          className="w-8 h-8 lg:w-9 lg:h-9 -ml-1 rounded-[9px] flex items-center justify-center text-ink-muted hover:bg-surface-soft transition-colors cursor-pointer flex-shrink-0"
         >
           <ArrowLeft size={18} />
         </button>
       )}
       <div className="flex-1 min-w-0">
-        <h3 className="text-[15px] font-extrabold text-ink">{title}</h3>
-        {subtitle && <p className="text-[11px] text-ink-muted mt-0.5">{subtitle}</p>}
+        <h3 className="text-[15px] lg:text-[18px] font-extrabold text-ink">{title}</h3>
+        {subtitle && <p className="text-[11px] lg:text-[12px] text-ink-muted mt-0.5">{subtitle}</p>}
       </div>
       {right}
     </header>

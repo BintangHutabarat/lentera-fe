@@ -50,7 +50,7 @@ export default function PelajaranPage() {
                   <div className="flex-1 min-w-0">
                     <div className="text-[13px] font-extrabold text-ink">{subj.name}</div>
                     <div className="text-[11px] text-ink-muted mt-0.5">
-                      {subj.teacher.name} • {subj.chaptersTotal} Bab
+                      {subj.teacher.name}
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0 min-w-[60px]">
